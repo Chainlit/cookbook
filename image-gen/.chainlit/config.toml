@@ -24,4 +24,4 @@ hide_cot = false
 github = "https://github.com/Chainlit/demos"
 
 # Limit the number of requests per user.
-#request_limit = "10 per day"
+request_limit = "20 per day"

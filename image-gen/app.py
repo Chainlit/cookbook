@@ -57,7 +57,9 @@ def run(agent_executor, action_input):
     if generated_image:
         elements = [
             cl.LocalImage(
-                content=generated_image, name=generated_image_name, display="inline"
+                content=generated_image,
+                name=generated_image_name,
+                display="inline",
             )
         ]
         actions = [cl.Action(name="Create variation", value=generated_image_name)]

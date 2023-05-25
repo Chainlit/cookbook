@@ -1,19 +1,22 @@
 # 🎨 Chainlit Image Gen demo
 
-Welcome to our creative image generation app built with [Chainlit](https://chainlit.io), [LangChain](https://python.langchain.com/en/latest/index.html), and [Stability AI](https://stability.ai/)! 🌟 This app allows you to create and edit unique images simply by chatting with it. Talk about having an artistic conversation! 🎨🗨️
+Welcome to our creative image generation demo built with [Chainlit](https://chainlit.io), [LangChain](https://python.langchain.com/en/latest/index.html), and [Stability AI](https://stability.ai/)! 🌟 This app allows you to create and edit unique images simply by chatting with it. Talk about having an artistic conversation! 🎨🗨️
 
-## 🎯 How it Works
-
-It's super simple! Just input your desired image description, and our app will generate a custom image based on your request. You can even edit the image by asking more questions or making modifications. Cool, isn't it? 😎
+## 🎯 Example
 
 Try asking:
 ```
-create an image of an astronaut riding a horse on Mars, HD, dramatic lighting
+Anime style snowy swiss mountains lit by the moon. Clear night sky. HD.
 ```
+
+![Result](https://chainlit-cloud.s3.eu-west-3.amazonaws.com/docs/img-gen-0.jpg)
 
 You can then ask for modifications:
 ```
-change the pose of the horse
+change the clear night sky with a starry sky
 ```
 
-Or create new images!
+![Result](https://chainlit-cloud.s3.eu-west-3.amazonaws.com/docs/img-gen-1.jpg)
+
+## ⚠️ Disclaimer
+Please note that the primary goal of this demo is to showcase the ease and convenience of building LLM apps using Chainlit and other tools rather than presenting a state-of-the-art image generation application. 
