@@ -11,7 +11,7 @@ from langchain.agents.structured_chat.prompt import SUFFIX
 def create_variant(action: Action):
     agent = cl.user_session.get("agent")
     agent_input = f"Create a variation of {action.value}"
-    cl.send_message(f"Creating a variation of `{action.value}`.")
+    cl.Message(content=f"Creating a variation of `{action.value}`.").send()
     run(agent, agent_input)
 
 
@@ -64,4 +64,4 @@ def run(agent_executor, action_input):
         ]
         actions = [cl.Action(name="Create variation", value=generated_image_name)]
 
-    cl.send_message(content=res, elements=elements, actions=actions)
+    cl.Message(content=res, elements=elements, actions=actions).send()

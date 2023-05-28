@@ -48,9 +48,11 @@ def process_file(file: AskFileResponse):
 def langchain_factory():
     file = None
     while file is None:
-        file = cl.ask_for_file(
-            title=welcome_message, accept=["text/plain", "application/pdf"], timeout=180
-        )
+        file = cl.AskFileMessage(
+            content=welcome_message,
+            accept=["text/plain", "application/pdf"],
+            timeout=180,
+        ).send()
 
     docs = process_file(file)
 
@@ -77,7 +79,7 @@ def langchain_factory():
     )
 
     # Let the user know that the system is ready
-    cl.send_message(f"`{file.name}` uploaded, you can now ask questions!")
+    cl.Message(content=f"`{file.name}` uploaded, you can now ask questions!").send()
 
     return chain
 
@@ -114,4 +116,4 @@ def process_response(res):
         else:
             answer += "\nNo sources found"
 
-    cl.send_message(answer, elements=source_elements)
+    cl.Message(content=answer, elements=source_elements).send()
