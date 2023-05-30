@@ -2,4 +2,6 @@
 *.langchain.db
 .vscode
 .DS_STORE
+fly.toml
+.dockerignore
 __pycache__
