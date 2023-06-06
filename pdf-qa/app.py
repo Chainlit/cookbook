@@ -1,4 +1,5 @@
 import os
+
 from langchain.document_loaders import PyPDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -6,8 +7,10 @@ from langchain.vectorstores import Pinecone
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.chat_models import ChatOpenAI
 import pinecone
+
 import chainlit as cl
 from chainlit.types import AskFileResponse
+from chainlit.sync import asyncify
 
 pinecone.init(
     api_key=os.environ.get("PINECONE_API_KEY"),
@@ -44,16 +47,7 @@ def process_file(file: AskFileResponse):
         return docs
 
 
-@cl.langchain_factory
-def langchain_factory():
-    file = None
-    while file is None:
-        file = cl.AskFileMessage(
-            content=welcome_message,
-            accept=["text/plain", "application/pdf"],
-            timeout=180,
-        ).send()
-
+def get_docsearch(file: AskFileResponse):
     docs = process_file(file)
 
     # Save data in the user session
@@ -72,6 +66,22 @@ def langchain_factory():
         )
         namespaces.add(namespace)
 
+    return docsearch
+
+
+@cl.langchain_factory(use_async=True)
+async def langchain_factory():
+    file = None
+    while file is None:
+        file = await cl.AskFileMessage(
+            content=welcome_message,
+            accept=["text/plain", "application/pdf"],
+            max_size_mb=20,
+            timeout=180,
+        ).send()
+
+    docsearch = await asyncify(get_docsearch)(file)
+
     chain = RetrievalQAWithSourcesChain.from_chain_type(
         ChatOpenAI(temperature=0, streaming=True),
         chain_type="stuff",
@@ -79,13 +89,15 @@ def langchain_factory():
     )
 
     # Let the user know that the system is ready
-    cl.Message(content=f"`{file.name}` uploaded, you can now ask questions!").send()
+    await cl.Message(
+        content=f"`{file.name}` uploaded, you can now ask questions!"
+    ).send()
 
     return chain
 
 
 @cl.langchain_postprocess
-def process_response(res):
+async def process_response(res):
     answer = res["answer"]
     sources = res["sources"].strip()
     source_elements = []
@@ -109,11 +121,11 @@ def process_response(res):
             text = docs[index].page_content
             found_sources.append(source_name)
             # Create the text element referenced in the message
-            source_elements.append(cl.Text(text=text, name=source_name))
+            source_elements.append(cl.Text(content=text, name=source_name))
 
         if found_sources:
             answer += f"\nSources: {', '.join(found_sources)}"
         else:
             answer += "\nNo sources found"
 
-    cl.Message(content=answer, elements=source_elements).send()
+    await cl.Message(content=answer, elements=source_elements).send()
