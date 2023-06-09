@@ -61,7 +61,7 @@ async def run(agent_executor, action_input):
     generated_image = cl.user_session.get(generated_image_name)
     if generated_image:
         elements = [
-            cl.LocalImage(
+            cl.Image(
                 content=generated_image,
                 name=generated_image_name,
                 display="inline",
