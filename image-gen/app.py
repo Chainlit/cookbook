@@ -1,5 +1,6 @@
 import chainlit as cl
 from chainlit.action import Action
+
 from tools import generate_image_tool, edit_image_tool
 from langchain.agents import initialize_agent, AgentType
 from langchain.chat_models import ChatOpenAI
@@ -8,11 +9,11 @@ from langchain.agents.structured_chat.prompt import SUFFIX
 
 
 @cl.action_callback("Create variation")
-def create_variant(action: Action):
+async def create_variant(action: Action):
     agent = cl.user_session.get("agent")
     agent_input = f"Create a variation of {action.value}"
-    cl.Message(content=f"Creating a variation of `{action.value}`.").send()
-    run(agent, agent_input)
+    await cl.Message(content=f"Creating a variation of `{action.value}`.").send()
+    await run(agent, agent_input)
 
 
 @cl.langchain_rename
@@ -23,7 +24,7 @@ def rename(orig_author):
     return mapping.get(orig_author, orig_author)
 
 
-@cl.langchain_factory
+@cl.langchain_factory(use_async=False)
 def main():
     llm = ChatOpenAI(temperature=0, streaming=True)
     tools = [generate_image_tool, edit_image_tool]
@@ -45,9 +46,13 @@ def main():
 
 
 @cl.langchain_run
-def run(agent_executor, action_input):
+async def run(agent_executor, action_input):
     cl.user_session.set("generated_image", None)
-    res = agent_executor.run(input=action_input)
+
+    # No async implementation in the Stability AI client, fallback to sync
+    res = await cl.make_async(agent_executor.run)(
+        input=action_input, callbacks=[cl.ChainlitCallbackHandler()]
+    )
 
     elements = []
     actions = []
@@ -56,7 +61,7 @@ def run(agent_executor, action_input):
     generated_image = cl.user_session.get(generated_image_name)
     if generated_image:
         elements = [
-            cl.LocalImage(
+            cl.Image(
                 content=generated_image,
                 name=generated_image_name,
                 display="inline",
@@ -64,4 +69,4 @@ def run(agent_executor, action_input):
         ]
         actions = [cl.Action(name="Create variation", value=generated_image_name)]
 
-    cl.Message(content=res, elements=elements, actions=actions).send()
+    await cl.Message(content=res, elements=elements, actions=actions).send()

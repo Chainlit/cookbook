@@ -22,9 +22,9 @@ embeddings = OpenAIEmbeddings()
 welcome_message = "Welcome to the Chainlit Pinecone demo! Ask anything about documents you vectorized and stored in your Pinecone DB."
 
 
-@cl.langchain_factory
-def langchain_factory():
-    cl.Message(content=welcome_message).send()
+@cl.langchain_factory(use_async=True)
+async def langchain_factory():
+    await cl.Message(content=welcome_message).send()
     docsearch = Pinecone.from_existing_index(
         index_name=index_name, embedding=embeddings, namespace=namespace
     )
@@ -39,7 +39,7 @@ def langchain_factory():
 
 
 @cl.langchain_postprocess
-def process_response(res):
+async def process_response(res):
     answer = res["answer"]
     sources = res.get("sources", "").strip()  # Use the get method with a default value
     source_elements = []
@@ -67,7 +67,7 @@ def process_response(res):
                 text = docs[found_index].page_content
 
                 found_sources.append(clean_source_name)
-                source_elements.append(cl.Text(text=text, name=clean_source_name))
+                source_elements.append(cl.Text(content=text, name=clean_source_name))
 
             if found_sources:
                 # Add the sources to the answer, referencing the text elements
@@ -76,4 +76,4 @@ def process_response(res):
                 answer += "\nNo sources found"
 
     # Send the answer and the text elements to the UI
-    cl.Message(content=answer, elements=source_elements).send()
+    await cl.Message(content=answer, elements=source_elements).send()

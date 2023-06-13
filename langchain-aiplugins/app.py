@@ -5,7 +5,7 @@ from langchain.tools import AIPluginTool
 from chainlit import langchain_factory
 
 
-@langchain_factory
+@langchain_factory(use_async=True)
 def load():
     tool = AIPluginTool.from_plugin_url(
         "https://www.klarna.com/.well-known/ai-plugin.json"
