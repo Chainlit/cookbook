@@ -10,7 +10,6 @@ import pinecone
 
 import chainlit as cl
 from chainlit.types import AskFileResponse
-from chainlit.sync import asyncify
 
 pinecone.init(
     api_key=os.environ.get("PINECONE_API_KEY"),
@@ -71,16 +70,22 @@ def get_docsearch(file: AskFileResponse):
 
 @cl.langchain_factory(use_async=True)
 async def langchain_factory():
-    file = None
-    while file is None:
-        file = await cl.AskFileMessage(
+    files = None
+    while files is None:
+        files = await cl.AskFileMessage(
             content=welcome_message,
             accept=["text/plain", "application/pdf"],
             max_size_mb=20,
             timeout=180,
         ).send()
 
-    docsearch = await asyncify(get_docsearch)(file)
+    file = files[0]
+
+    msg = cl.Message(content=f"Processing `{file.name}`...")
+    await msg.send()
+
+    # No async implementation in the Pinecone client, fallback to sync
+    docsearch = await cl.make_async(get_docsearch)(file)
 
     chain = RetrievalQAWithSourcesChain.from_chain_type(
         ChatOpenAI(temperature=0, streaming=True),
@@ -89,9 +94,7 @@ async def langchain_factory():
     )
 
     # Let the user know that the system is ready
-    await cl.Message(
-        content=f"`{file.name}` uploaded, you can now ask questions!"
-    ).send()
+    await msg.update(content=f"`{file.name}` processed. You can now ask questions!")
 
     return chain
 

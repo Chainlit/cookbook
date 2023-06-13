@@ -1,6 +1,5 @@
 import chainlit as cl
 from chainlit.action import Action
-from chainlit.sync import asyncify
 
 from tools import generate_image_tool, edit_image_tool
 from langchain.agents import initialize_agent, AgentType
@@ -50,7 +49,8 @@ def main():
 async def run(agent_executor, action_input):
     cl.user_session.set("generated_image", None)
 
-    res = await asyncify(agent_executor.run)(
+    # No async implementation in the Stability AI client, fallback to sync
+    res = await cl.make_async(agent_executor.run)(
         input=action_input, callbacks=[cl.ChainlitCallbackHandler()]
     )
 
