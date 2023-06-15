@@ -1,5 +1,5 @@
 import openai
-import json
+import json, ast
 import os
 import chainlit as cl
 
@@ -10,14 +10,16 @@ MAX_ITER = 5
 
 # Example dummy function hard coded to return the same weather
 # In production, this could be your backend API or an external API
-def get_current_weather(location, unit="fahrenheit"):
+def get_current_weather(location, unit):
     """Get the current weather in a given location"""
+    unit = unit or "Farenheit"
     weather_info = {
         "location": location,
         "temperature": "72",
         "unit": unit,
         "forecast": ["sunny", "windy"],
     }
+
     return json.dumps(weather_info)
 
 
@@ -71,6 +73,8 @@ async def run_conversation(user_message: str):
             break
 
         function_name = message["function_call"]["name"]
+        arguments = ast.literal_eval(message["function_call"]["arguments"])
+
         await cl.Message(
             author=function_name,
             content=str(message["function_call"]),
@@ -79,8 +83,8 @@ async def run_conversation(user_message: str):
         ).send()
 
         function_response = get_current_weather(
-            location=message.get("location"),
-            unit=message.get("unit"),
+            location=arguments.get("location"),
+            unit=arguments.get("unit"),
         )
 
         message_history.append(
