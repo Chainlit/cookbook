@@ -14,26 +14,26 @@ import arxiv
 import chainlit as cl
 from chainlit import user_session
 
-@cl.langchain_factory
-def init():
+@cl.langchain_factory(use_async=True)
+async def init():
     arxiv_query = None
 
     # Wait for the user to ask an Arxiv question
     while arxiv_query == None:
-        arxiv_query = cl.AskUserMessage(
+        arxiv_query = await cl.AskUserMessage(
             content="Please enter a topic to begin!", timeout=15
         ).send()
 
     # Obtain the top 30 results from Arxiv for the query
     search = arxiv.Search(
         query=arxiv_query["content"],
-        max_results=30,
+        max_results=3,
         sort_by=arxiv.SortCriterion.Relevance,
     )
 
+    await cl.Message(content="Downloading and chunking articles...").send()
     # download each of the pdfs
     pdf_data = []
-
     for result in search.results():
         loader = PyMuPDFLoader(result.pdf_url)
         loaded_pdf = loader.load()
@@ -53,7 +53,7 @@ def init():
     # Create a chain that uses the Chroma vector store
     chain = RetrievalQAWithSourcesChain.from_chain_type(
         ChatOpenAI(
-            model_name="gpt-4",
+            model_name="gpt-3.5-turbo-16k",
             temperature=0,
         ),
         chain_type="stuff",
@@ -62,7 +62,7 @@ def init():
     )
 
     # Let the user know that the system is ready
-    cl.Message(
+    await cl.Message(
         content=f"We found a few papers about `{arxiv_query['content']}` you can now ask questions!"
     ).send()
 
@@ -70,7 +70,7 @@ def init():
 
 
 @cl.langchain_postprocess
-def process_response(res):
+async def process_response(res):
     answer = res["answer"]
     source_elements_dict = {}
     source_elements = []
@@ -94,7 +94,7 @@ def process_response(res):
         page_numbers = ", ".join([str(x) for x in source["page_number"]])
         text_for_source = f"Page Number(s): {page_numbers}\nURL: {source['url']}"
         source_elements.append(
-            cl.Text(name=title, text=text_for_source, display="inline")
+            cl.Text(name=title, content=text_for_source, display="inline")
         )
 
-    cl.Message(content=answer, elements=source_elements).send()
+    await cl.Message(content=answer, elements=source_elements).send()
