@@ -1,0 +1,7 @@
+arxiv==1.4.7
+langchain==0.0.202
+chainlit==0.3.0
+openai
+chromadb
+tiktoken
+pymupdf
