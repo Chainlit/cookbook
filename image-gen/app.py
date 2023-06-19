@@ -51,7 +51,7 @@ async def run(agent_executor, action_input):
 
     # No async implementation in the Stability AI client, fallback to sync
     res = await cl.make_async(agent_executor.run)(
-        input=action_input, callbacks=[cl.ChainlitCallbackHandler()]
+        input=action_input, callbacks=[cl.LangchainCallbackHandler()]
     )
 
     elements = []
