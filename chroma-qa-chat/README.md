@@ -18,6 +18,6 @@ This folder is showing how to:
 - Answer questions from users as well as showing the sources used to answer.
 - How to deploy on HuggingFace Spaces
 
-Video from [https://twitter.com/c_s_ale](Chris Alexiuk): https://www.youtube.com/watch?v=9SBUStfCtmk&ab_channel=ChrisAlexiuk
+Video from [Chris Alexiuk](https://twitter.com/c_s_ale): https://www.youtube.com/watch?v=9SBUStfCtmk&ab_channel=ChrisAlexiuk
 
 Note: the code is updated to work with the new async implementation
