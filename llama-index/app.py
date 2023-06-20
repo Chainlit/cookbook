@@ -29,7 +29,7 @@ except:
     index.storage_context.persist()
 
 
-@cl.llama_index_factory(use_async=True)
+@cl.llama_index_factory
 async def factory():
     llm_predictor = LLMPredictor(
         llm=ChatOpenAI(
