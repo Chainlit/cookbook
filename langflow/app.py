@@ -1,6 +1,6 @@
 import json
 
-from langchain.agents import AgentExecutor, ZeroShotAgent
+from langchain.agents import AgentExecutor
 
 import chainlit as cl
 
