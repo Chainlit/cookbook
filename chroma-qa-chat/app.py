@@ -48,6 +48,9 @@ async def init():
     embeddings = OpenAIEmbeddings(
         disallowed_special=(),
     )
+    
+    # If operation takes too long, make_async allows to run in a thread
+    # docsearch = await cl.make_async(Chroma.from_documents)(pdf_data, embeddings) 
     docsearch = Chroma.from_documents(pdf_data, embeddings)
 
     # Create a chain that uses the Chroma vector store
