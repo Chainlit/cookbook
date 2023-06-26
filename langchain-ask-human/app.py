@@ -1,5 +1,5 @@
 from langchain import OpenAI, LLMMathChain, SerpAPIWrapper
-from langchain.agents import initialize_agent, Tool
+from langchain.agents import initialize_agent, Tool, AgentType
 from langchain.chat_models import ChatOpenAI
 import os
 from typing import *
@@ -56,5 +56,5 @@ async def load():
         ),
     ]
     return initialize_agent(
-        tools, llm1, agent="chat-zero-shot-react-description", verbose=True
+        tools, llm1, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
