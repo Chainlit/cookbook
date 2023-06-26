@@ -6,4 +6,5 @@ This Python script is an example on how to ask the end-user a question.
 - `cl.AskUserMessage()` usage to interrupt agent execution and ask more information to the user.
 
 
-![Rendering](./ask-human.mp4)
+https://github.com/Chainlit/cookbook/assets/16107237/5352b277-4eef-4716-a4f4-233864bf696e
+
