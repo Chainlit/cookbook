@@ -39,14 +39,14 @@ class HumanInputChainlit(BaseTool):
         return res['content']
 
 
-
-# The search tool has no async implementation, we fall back to sync
-@cl.langchain_factory(use_async=True)
+# Could you async but make sure all tools have an async implem
+@cl.langchain_factory(use_async=False)
 async def load():
     llm = ChatOpenAI(temperature=0, streaming=True)
     llm1 = OpenAI(temperature=0, streaming=True)
     llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
 
+    # fyi, the calculator tool only has a sync implementation
     tools = [
         HumanInputChainlit(),
         Tool(
