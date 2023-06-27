@@ -11,7 +11,8 @@ with open("./schema.json", "r") as f:
 
 @cl.langflow_factory(
     schema=schema,  # dict or the api url to your langflow schema
-    use_async=True,
+    tweaks={},  # optional Langflow tweaks dict
+    use_async=False,
 )
 def factory(agent: AgentExecutor):
     # Modify your agent here if needed
