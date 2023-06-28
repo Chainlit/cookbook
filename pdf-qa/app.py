@@ -1,24 +1,15 @@
-import os
-
 from langchain.document_loaders import PyPDFLoader, TextLoader
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.llms import GPT4All
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Pinecone
 from langchain.chains import RetrievalQAWithSourcesChain
-from langchain.chat_models import ChatOpenAI
-import pinecone
 
 import chainlit as cl
 from chainlit.types import AskFileResponse
+from langchain.vectorstores import Chroma
 
-pinecone.init(
-    api_key=os.environ.get("PINECONE_API_KEY"),
-    environment=os.environ.get("PINECONE_ENV"),
-)
-
-index_name = "langchain-demo"
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-embeddings = OpenAIEmbeddings()
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 namespaces = set()
 
@@ -52,23 +43,12 @@ def get_docsearch(file: AskFileResponse):
     # Save data in the user session
     cl.user_session.set("docs", docs)
 
-    # Create a unique namespace for the file
-    namespace = str(hash(file.content))
-
-    if namespace in namespaces:
-        docsearch = Pinecone.from_existing_index(
-            index_name=index_name, embedding=embeddings, namespace=namespace
-        )
-    else:
-        docsearch = Pinecone.from_documents(
-            docs, embeddings, index_name=index_name, namespace=namespace
-        )
-        namespaces.add(namespace)
+    docsearch = Chroma.from_documents(docs, embeddings)
 
     return docsearch
 
 
-@cl.langchain_factory(use_async=True)
+@cl.langchain_factory(use_async=False)
 async def langchain_factory():
     files = None
     while files is None:
@@ -87,10 +67,12 @@ async def langchain_factory():
     # No async implementation in the Pinecone client, fallback to sync
     docsearch = await cl.make_async(get_docsearch)(file)
 
+    local_path = "models/ggml-gpt4all-j-v1.3-groovy.bin"
+    chat_model = GPT4All(model=local_path, backend='gptj', n_ctx=1000)
     chain = RetrievalQAWithSourcesChain.from_chain_type(
-        ChatOpenAI(temperature=0, streaming=True),
+        chat_model,
         chain_type="stuff",
-        retriever=docsearch.as_retriever(max_tokens_limit=4097),
+        retriever=docsearch.as_retriever(max_tokens_limit=2048),
     )
 
     # Let the user know that the system is ready
