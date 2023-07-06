@@ -12,7 +12,7 @@ The goal is to show how to use Chainlit to get more observability on agents.
 pip install -r requirements.txt
 ```
 
-2. Copy the `.env.example` file to `.env` and fill in the values (especially the `OPENAI_API_KEY`).
+2. Copy the `.env.example` file to `.env` and fill in the values (especially the `OPENAI_API_KEY` for the LLM API and the `OBJECTIVE` for the AI goal).
 
 ```bash
 cp .env.example .env

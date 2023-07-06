@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-from dotenv import load_dotenv
-
-# Load default environment variables (.env)
-load_dotenv()
-
 import os
 import time
 import logging
