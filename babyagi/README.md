@@ -4,6 +4,8 @@ This is a demo of an integration of Chainlit with BabyAGI.
 
 The goal is to show how to use Chainlit to get more observability on agents.
 
+https://github.com/Chainlit/cookbook/assets/13104895/57d1d9af-62a0-4f67-a530-1f0a3fc93488
+
 ## How to run
 
 1. Install the Python dependencies:
