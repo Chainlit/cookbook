@@ -1,4 +1,4 @@
-# Basic Chatbot Powered by Anthropic
+# Your own Claude by Anthropic 🔥
 
 This folder is showing how to:
 
