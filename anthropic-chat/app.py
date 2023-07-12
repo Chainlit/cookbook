@@ -33,7 +33,7 @@ async def chat(message: str):
         prompt=prompt,
         stop_sequences=[anthropic.HUMAN_PROMPT],
         max_tokens_to_sample=1000,
-        model="claude-v1",
+        model="claude-2.0", # claude-instant-1.1
         stream=True,
     )
 
