@@ -1,0 +1,4 @@
+chainlit==0.5.2
+loguru==0.5.3
+tiktoken==0.4.0
+prompt_toolkit==3.0.39
