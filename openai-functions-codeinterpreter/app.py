@@ -9,6 +9,9 @@ import os
 import tiktoken
 import importlib
 import json
+from chainlit import user_session
+openai.api_key = os.environ.get("OPENAI_API_KEY")
+openai.api_base = os.environ.get("OPENAI_API_BASE")
 
 # 获取plugins目录下所有的子目录，忽略名为'__pycache__'的目录
 plugin_dirs = [d for d in os.listdir('plugins') 
@@ -40,8 +43,10 @@ for dir in plugin_dirs:
         if inspect.isfunction(obj)
     ])
 
-max_tokens = 5000
+function_manager = FunctionManager(functions=functions)
+print("functions:", function_manager.generate_functions_array())
 
+max_tokens = 5000
 
 def __truncate_conversation(conversation) -> None:
     """
@@ -62,7 +67,6 @@ def __truncate_conversation(conversation) -> None:
     conversation.insert(0, system_con)
     return conversation
 
-
 # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
 def get_token_count(conversation) -> int:
     """
@@ -81,15 +85,7 @@ def get_token_count(conversation) -> int:
     num_tokens += 2  # every reply is primed with <im_start>assistant
     return num_tokens
 
-function_manager = FunctionManager(functions=functions)
-
-print("functions:", function_manager.generate_functions_array())
-
-openai.api_key = os.environ["OPENAI_API_KEY"]
-openai.api_base = os.environ["OPENAI_API_BASE"]
-
 MAX_ITER = 100
-
 
 async def on_message(user_message: object):
     print("==================================")
@@ -165,7 +161,6 @@ async def on_message(user_message: object):
         ).send()
         cur_iter += 1
 
-
 async def process_new_delta(new_delta, openai_message, content_ui_message,
                             function_ui_message):
     if "role" in new_delta:
@@ -197,7 +192,6 @@ async def process_new_delta(new_delta, openai_message, content_ui_message,
                 new_delta["function_call"]["arguments"])
     return openai_message, content_ui_message, function_ui_message
 
-
 @cl.on_chat_start
 def start_chat():
     cl.user_session.set(
@@ -209,7 +203,6 @@ def start_chat():
             """
         }],
     )
-
 
 @cl.on_message
 async def run_conversation(user_message: object):

@@ -1,134 +1,61 @@
-# GPT_CodeInterpreter
+# OpenAI Chat with Chainlit and Function Manager
 
+Chainlit is an AI-powered project designed to perform a variety of tasks. It is built on a plugin architecture, allowing it to be easily extended with new functionalities.
 
+## Project Features
 
+- **Plugin Architecture**: Chainlit uses a flexible and extensible plugin architecture. Each plugin is a folder containing a `functions.py` and a `config.json` file, defining the functionality and configuration of the plugin.
 
-## Planned Features
+- **Function Manager**: The Function Manager is responsible for parsing and invoking functions defined in the `functions.py` files of each plugin.
 
-- [ ] Add IPython and Jupyter capabilities to create interactive widgets in robot_functions
-- [ ] Support writing and debugging HTML code directly in robot_functions
-- [ ] Utilize IPython/Jupyter capabilities for smarter and more convenient code writing
-- [ ] Automate iteration of HTML projects to complete full development lifecycle  
-- [ ] Enable better page rendering, not just images - e.g. display pages directly in Jupyter
+- **AI-Powered**: Chainlit leverages the power of AI to understand and generate human language, making it capable of handling a variety of tasks.
 
-[Video](https://youtu.be/NhZQWoUWLRc)
-[Video](https://youtu.be/AesyvVu4QwI)
+## Plugin Structure and Usage
 
-## Prerequisites
+Each plugin is a directory in the 'plugins' folder. The directory name is the plugin's name. Each plugin directory contains at least two files:
 
-Before you begin, ensure you have met the following requirements:
+1. `functions.py`: This file contains the functions that the plugin provides. Each function should be a top-level function (i.e., not a method of a class or an inner function) and should be named in a way that reflects its functionality. Functions can be either synchronous or asynchronous.
 
-- You have installed the latest version of Python (3.8+ recommended).
-- You have installed Chainlit.
+2. `config.json`: This file contains the plugin's configuration. It's a JSON file with one required field: `enabled`. If `enabled` is set to `true`, the plugin's functions will be imported and available for use. If `enabled` is set to `false`, the plugin's functions will not be imported.
 
-## Installing Chainlit
+To use a plugin, ensure that it is enabled in its `config.json` file. Once enabled, the functions provided by the plugin will be automatically imported when the script is run. The AI assistant will be able to call these functions as part of the conversation.
 
-To install Chainlit, follow these steps:
+## Creating a Plugin
 
-```bash
-pip install chainlit
+To create a plugin, follow these steps:
+
+1. Create a new directory in the 'plugins' folder. The directory name will be the plugin's name.
+
+2. In the new directory, create a file named `functions.py`. In this file, define the functions that you want the plugin to provide. Each function should be a top-level function and should be named in a way that reflects its functionality.
+
+3. In the same directory, create a file named `config.json`. In this file, add the following JSON:
+
+```json
+{
+    "enabled": true
+}
 ```
 
-## Environment Variables
+This will enable the plugin by default. If you want to disable the plugin, you can change `true` to `false`.
 
-Before running the project, you need to set up the following environment variables. You can set these in your shell, or add them to a `.env` file in the root directory of the project.
+## Running the Project
 
-Replace `<your_value>` with your actual values.
+To run this project, you need to follow these steps:
 
-```bash
-export OPENAI_API_KEY=<your_value>
-export OPENAI_API_BASE=<your_value>
-export SD_API_KEY=<your_value>
-export MYSQL_USER=<your_value>
-export MYSQL_PASSWORD=<your_value>
-export MYSQL_HOST=<your_value>
-export MYSQL_DATABASE=<your_value>
-```
+1. First, you need to create a `.env` file in the root directory of the project. You can do this by copying the `.env.example` file.
 
-## Running the Project with Environment Variables
+2. In the `.env` file, you need to provide your OpenAI API key. This should be a string, like `OPENAI_API_KEY=your_api_key_here`. Please replace `your_api_key_here` with your actual OpenAI API key.
 
-If you're setting up the environment variables in a `.env` file, you'll need to use a Python package like `python-dotenv` to load the variables when you run your script.
+3. Also in the `.env` file, you need to set the base URL for the OpenAI API. This should be a string, like `OPENAI_API_BASE=https://api.openai.com/v1`.
 
-To install `python-dotenv`, run:
+4. After saving the `.env` file, you need to install Chainlit. You can do this using pip: `pip install chainlit`.
 
-```bash
-pip install python-dotenv
-```
+5. Once Chainlit is installed, you can run the project using the following command: `chainlit run app.py -w`.
 
-Then, in your `main.py` script, you'll need to load the environment variables at the beginning of your script:
+## Contributing
 
-```python
-from dotenv import load_dotenv
-load_dotenv()
-```
+Contributions are welcome! Please read the contributing guide to learn about how you can contribute to this project.
 
-## Using GPT_CodeInterpreter
+## License
 
-To use GPT_CodeInterpreter, follow these steps:
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/boyueluzhipeng/GPT_CodeInterpreter.git
-```
-
-2. Navigate to the project directory:
-
-```bash
-cd GPT_CodeInterpreter
-```
-
-3. Run the main script:
-
-```bash
-python main.py
-```
-
-`robot_functions.py` is a Python module that contains a series of utility functions designed to be used in specific scenarios. These functions are written in an asynchronous manner, allowing them to be used in a non-blocking way in your application.
-
-## How to Add Your Functions
-
-You can add your own custom functions to the `robot_functions.py` file located in the `functions` directory. Each function you add should be written as an asynchronous function and include a detailed docstring that describes the function's purpose, parameters, and return values.
-
-Here is an example of how you can add your own function:
-
-```python
-async def your_function_name(your_parameters):
-    """
-    This is the function description, which describes what the function does.
-
-    Parameters:
-    your_parameters: This is the parameter description, which describes what the parameter is.
-    
-    Returns:
-    This is the return description, which describes what the function returns.
-    """
-    # Your function implementation goes here
-```
-
-The docstrings you provide for your functions are important because they are automatically parsed and passed to the GPT model. This helps the model understand the purpose and usage of your functions.
-
-## Function Descriptions
-
-Here is a brief description of the functions provided in the `robot_functions.py` file:
-
-- `python(code: str)`: Executes the provided Python code.
-- `need_file_upload()`: Requests the user to upload a file.
-- `show_images(paths: str)`: Displays images given their file paths.
-- `need_install_package(package_name: str)`: Checks and installs the specified Python package.
-- `csv_to_db(csv_path: str)`: Saves a CSV file to a database.
-- `query_data_by_sql(sql: str)`: Queries data from a database using SQL.
-- `sql_get_tables(sql: str)`: Retrieves all table names in a database.
-- `generate_and_process_dalle_images(dalle_prompt: str)`: Generates DALL-E images based on provided prompts.
-- `generate_and_process_stable_diffusion_images(stable_diffusion_prompt: str)`: Generates Stable Diffusion images based on provided prompts.
-- `get_style_descriptions()`: Returns descriptions of various style presets.
-- `image_2_image_stable_diffusion_images(stable_diffusion_prompt: str, init_image_path: str)`: Generates Stable Diffusion images based on provided prompts and initial image.
-- `change_sd_model()`: Switches the model of the Stability Diffusion API.
-
-Please refer to the docstrings in the `robot_functions.py` file for more detailed descriptions of these functions and their parameters.
-
-
-
-## Contact
-
-If you want to contact me you can reach me at 402087139@qq.com
+This project is licensed under the terms of the MIT license.
