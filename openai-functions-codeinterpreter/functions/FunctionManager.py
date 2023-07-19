@@ -139,28 +139,12 @@ def get_html(url: str):
     response = requests.get(url, headers=headers)
     # 返回网页内容
     return response.text
-
-
-def search_by_bard(content: str):
-    """
-    Search the content(translate to English language) by bard.if the input content that you don't know how to say, you can use this function.
-    Parameters:
-        content: The content to search.please change the content language to English.(required)
-    """
-    print(content)
-    response = openai.ChatCompletion.create(model="bard",
-                                            messages=[{
-                                                'role': 'user',
-                                                'content': content
-                                            }],
-                                            stream=False,
-                                            temperature=0)
     print(response)
     return {'content': response['choices'][0]['message']['content']}
 
 
 if __name__ == "__main__":
-    function_manager = FunctionManager(functions=[search_by_bard])
+    function_manager = FunctionManager(functions=[get_current_weather, get_html])
     functions_array = function_manager.generate_functions_array()
     print(functions_array)
 
