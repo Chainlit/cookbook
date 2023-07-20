@@ -1,6 +1,8 @@
 import os
 import openai
 
+from llama_index.response.schema import Response, StreamingResponse
+from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.callbacks.base import CallbackManager
 from llama_index import (
     LLMPredictor,
@@ -29,7 +31,7 @@ except:
     index.storage_context.persist()
 
 
-@cl.llama_index_factory
+@cl.on_chat_start
 async def factory():
     llm_predictor = LLMPredictor(
         llm=ChatOpenAI(
@@ -49,4 +51,25 @@ async def factory():
         streaming=STREAMING,
     )
 
-    return query_engine
+    cl.user_session.set("query_engine", query_engine)
+
+
+@cl.on_message
+async def main(message):
+    query_engine = cl.user_session.get("query_engine")  # type: RetrieverQueryEngine
+    response = await cl.make_async(query_engine.query)(message)
+
+    response_message = cl.Message(content="")
+
+    if isinstance(response, Response):
+        response_message.content = str(response)
+        await response_message.send()
+    elif isinstance(response, StreamingResponse):
+        gen = response.response_gen
+        for token in gen:
+            await response_message.stream_token(token=token)
+
+        if response.response_txt:
+            response_message.content = response.response_txt
+
+        await response_message.send()
