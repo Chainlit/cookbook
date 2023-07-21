@@ -1,7 +1,6 @@
-from langchain import OpenAI, LLMMathChain, SerpAPIWrapper
-from langchain.agents import initialize_agent, Tool, AgentType
+from langchain import OpenAI, LLMMathChain
+from langchain.agents import initialize_agent, Tool, AgentType, AgentExecutor
 from langchain.chat_models import ChatOpenAI
-import os
 from typing import *
 from langchain.tools import BaseTool
 
@@ -14,20 +13,20 @@ class HumanInputChainlit(BaseTool):
 
     name = "human"
     description = (
-           "You can ask a human for guidance when you think you "
-            "got stuck or you are not sure what to do next. "
-            "The input should be a question for the human."
-           )
+        "You can ask a human for guidance when you think you "
+        "got stuck or you are not sure what to do next. "
+        "The input should be a question for the human."
+    )
 
     def _run(
-            self,
-            query: str,
-            run_manager=None,
-        ) -> str:
+        self,
+        query: str,
+        run_manager=None,
+    ) -> str:
         """Use the Human input tool."""
 
         res = run_sync(cl.AskUserMessage(content=query).send())
-        return res['content']
+        return res["content"]
 
     async def _arun(
         self,
@@ -36,12 +35,11 @@ class HumanInputChainlit(BaseTool):
     ) -> str:
         """Use the Human input tool."""
         res = await cl.AskUserMessage(content=query).send()
-        return res['content']
+        return res["content"]
 
 
-# Could you async but make sure all tools have an async implem
-@cl.langchain_factory(use_async=False)
-async def load():
+@cl.on_chat_start
+def start():
     llm = ChatOpenAI(temperature=0, streaming=True)
     llm1 = OpenAI(temperature=0, streaming=True)
     llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
@@ -55,6 +53,15 @@ async def load():
             description="useful for when you need to answer questions about math",
         ),
     ]
-    return initialize_agent(
+    agent = initialize_agent(
         tools, llm1, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
+
+    cl.user_session.set("agent", agent)
+
+
+@cl.on_message
+async def main(message):
+    agent = cl.user_session.get("agent")  # type: AgentExecutor
+    res = await agent.arun(message, callbacks=[cl.AsyncLangchainCallbackHandler()])
+    await cl.Message(content=res).send()
