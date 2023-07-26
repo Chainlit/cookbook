@@ -9,7 +9,6 @@ from langchain.chat_models import ChatOpenAI
 import pinecone
 
 import chainlit as cl
-from chainlit.server import app
 from chainlit.types import AskFileResponse
 
 pinecone.init(
@@ -27,11 +26,6 @@ welcome_message = """Welcome to the Chainlit PDF QA demo! To get started:
 1. Upload a PDF or text file
 2. Ask a question about the file
 """
-
-
-@app.get("/hello")
-def hello():
-    return "Hello World"
 
 
 def process_file(file: AskFileResponse):
