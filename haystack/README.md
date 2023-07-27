@@ -7,4 +7,4 @@
 
 This example is an adapted tutorial from the haystack website using chainlit and the `HaystackAgentCallbackHandler`
 
-![Screenshot](./screenshot.png)
+![Screenshot](./Screenshot.png)
