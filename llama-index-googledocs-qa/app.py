@@ -21,14 +21,14 @@ openai.api_key = os.environ.get("OPENAI_API_KEY")
 def load_context():
     try:
         # Rebuild the storage context
-        storage_context = StorageContext.from_defaults(persist_dir="./storage")
+        storage_context = StorageContext.from_defaults(persist_dir="./storage", callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]))
         # Load the index
-        index = load_index_from_storage(storage_context)
+        index = load_index_from_storage(storage_context, storage_context=storage_context)
     except:
         # Storage not found; create a new one
         GoogleDocsReader = download_loader('GoogleDocsReader')
 
-        gdoc_ids = ['DOCS-ID-1','DOC-ID-2','DOC-ID-3']
+        gdoc_ids = ['12e-4Ba7oWlBqQ0L1F2DNNN3FUHmDQZJwVZE2gCjIySg']
 
         loader = GoogleDocsReader()
         documents = loader.load_data(document_ids=gdoc_ids)

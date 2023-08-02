@@ -6,3 +6,6 @@ fly.toml
 .dockerignore
 __pycache__
 storage
+venv
+credentials.json
+token.json
