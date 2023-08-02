@@ -28,7 +28,7 @@ def load_context():
         # Storage not found; create a new one
         GoogleDocsReader = download_loader('GoogleDocsReader')
 
-        gdoc_ids = ['12e-4Ba7oWlBqQ0L1F2DNNN3FUHmDQZJwVZE2gCjIySg']
+        gdoc_ids = ['G-DOC-ID-1', 'G-DOC-ID-2', 'G-DOC-ID-3]
 
         loader = GoogleDocsReader()
         documents = loader.load_data(document_ids=gdoc_ids)
