@@ -7,3 +7,4 @@ fly.toml
 .dockerignore
 __pycache__
 storage
+.venv
