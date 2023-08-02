@@ -1,5 +1,6 @@
 *.env
 *.langchain.db
+*.chroma
 .vscode
 .DS_STORE
 fly.toml

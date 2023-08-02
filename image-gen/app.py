@@ -2,7 +2,7 @@ import chainlit as cl
 from chainlit.action import Action
 
 from tools import generate_image_tool, edit_image_tool
-from langchain.agents import initialize_agent, AgentType
+from langchain.agents import initialize_agent, AgentType, AgentExecutor
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.agents.structured_chat.prompt import SUFFIX
@@ -10,13 +10,12 @@ from langchain.agents.structured_chat.prompt import SUFFIX
 
 @cl.action_callback("Create variation")
 async def create_variant(action: Action):
-    agent = cl.user_session.get("agent")
     agent_input = f"Create a variation of {action.value}"
     await cl.Message(content=f"Creating a variation of `{action.value}`.").send()
-    await run(agent, agent_input)
+    await main(agent_input)
 
 
-@cl.langchain_rename
+@cl.author_rename
 def rename(orig_author):
     mapping = {
         "LLMChain": "Assistant",
@@ -24,14 +23,14 @@ def rename(orig_author):
     return mapping.get(orig_author, orig_author)
 
 
-@cl.langchain_factory(use_async=False)
-def main():
+@cl.on_chat_start
+def start():
     llm = ChatOpenAI(temperature=0, streaming=True)
     tools = [generate_image_tool, edit_image_tool]
     memory = ConversationBufferMemory(memory_key="chat_history")
     _SUFFIX = "Chat history:\n{chat_history}\n\n" + SUFFIX
 
-    agent_executor = initialize_agent(
+    agent = initialize_agent(
         tools=tools,
         llm=llm,
         agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
@@ -41,17 +40,17 @@ def main():
             "input_variables": ["input", "agent_scratchpad", "chat_history"],
         },
     )
+    cl.user_session.set("agent", agent)
 
-    return agent_executor
 
-
-@cl.langchain_run
-async def run(agent_executor, action_input):
+@cl.on_message
+async def main(message):
+    agent = cl.user_session.get("agent")  # type: AgentExecutor
     cl.user_session.set("generated_image", None)
 
     # No async implementation in the Stability AI client, fallback to sync
-    res = await cl.make_async(agent_executor.run)(
-        input=action_input, callbacks=[cl.LangchainCallbackHandler()]
+    res = await cl.make_async(agent.run)(
+        input=message, callbacks=[cl.LangchainCallbackHandler()]
     )
 
     elements = []

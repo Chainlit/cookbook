@@ -68,8 +68,8 @@ def get_docsearch(file: AskFileResponse):
     return docsearch
 
 
-@cl.langchain_factory(use_async=True)
-async def langchain_factory():
+@cl.on_chat_start
+async def start():
     files = None
     while files is None:
         files = await cl.AskFileMessage(
@@ -94,13 +94,21 @@ async def langchain_factory():
     )
 
     # Let the user know that the system is ready
-    await msg.update(content=f"`{file.name}` processed. You can now ask questions!")
+    msg.content = f"`{file.name}` processed. You can now ask questions!"
+    await msg.update()
 
-    return chain
+    cl.user_session.set("chain", chain)
 
 
-@cl.langchain_postprocess
-async def process_response(res):
+@cl.on_message
+async def main(message):
+    chain = cl.user_session.get("chain")  # type: RetrievalQAWithSourcesChain
+    cb = cl.AsyncLangchainCallbackHandler(
+        stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
+    )
+    cb.answer_reached = True
+    res = await chain.acall(message, callbacks=[cb])
+
     answer = res["answer"]
     sources = res["sources"].strip()
     source_elements = []
@@ -131,4 +139,8 @@ async def process_response(res):
         else:
             answer += "\nNo sources found"
 
-    await cl.Message(content=answer, elements=source_elements).send()
+    if cb.has_streamed_final_answer:
+        cb.final_stream.elements = source_elements
+        await cb.final_stream.update()
+    else:
+        await cl.Message(content=answer, elements=source_elements).send()
