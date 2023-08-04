@@ -10,6 +10,7 @@ from haystack.nodes import BM25Retriever, PromptNode
 from haystack.pipelines import DocumentSearchPipeline
 
 import chainlit as cl
+from chainlit.haystack.callbacks import HaystackAgentCallbackHandler
 
 load_dotenv()
 
@@ -87,7 +88,7 @@ Thought:
 
 retriever = get_retriever()
 agent = get_agent(retriever)
-cl.HaystackAgentCallbackHandler(agent)
+HaystackAgentCallbackHandler(agent)
 
 
 @cl.author_rename

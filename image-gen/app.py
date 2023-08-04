@@ -1,11 +1,12 @@
-import chainlit as cl
-from chainlit.action import Action
-
 from tools import generate_image_tool, edit_image_tool
 from langchain.agents import initialize_agent, AgentType, AgentExecutor
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.agents.structured_chat.prompt import SUFFIX
+
+import chainlit as cl
+from chainlit.action import Action
+from chainlit.langchain.callbacks import LangchainCallbackHandler
 
 
 @cl.action_callback("Create variation")
@@ -50,7 +51,7 @@ async def main(message):
 
     # No async implementation in the Stability AI client, fallback to sync
     res = await cl.make_async(agent.run)(
-        input=message, callbacks=[cl.LangchainCallbackHandler()]
+        input=message, callbacks=[LangchainCallbackHandler()]
     )
 
     elements = []

@@ -9,6 +9,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 import chainlit as cl
+from chainlit.langchain.callbacks import AsyncLangchainCallbackHandler
 
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
@@ -86,7 +87,7 @@ async def init():
 @cl.on_message
 async def main(message):
     chain = cl.user_session.get("chain")  # type: RetrievalQAWithSourcesChain
-    cb = cl.AsyncLangchainCallbackHandler(
+    cb = AsyncLangchainCallbackHandler(
         stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
     )
     cb.answer_reached = True

@@ -11,8 +11,9 @@ from llama_index import (
     load_index_from_storage,
 )
 from langchain.chat_models import ChatOpenAI
-import chainlit as cl
 
+import chainlit as cl
+from chainlit.llama_index.callbacks import LlamaIndexCallbackHandler
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
@@ -43,7 +44,7 @@ async def factory():
     service_context = ServiceContext.from_defaults(
         llm_predictor=llm_predictor,
         chunk_size=512,
-        callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]),
+        callback_manager=CallbackManager([LlamaIndexCallbackHandler()]),
     )
 
     query_engine = index.as_query_engine(

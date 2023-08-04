@@ -1,4 +1,5 @@
 import os
+
 from llama_index import download_loader
 from llama_index import ServiceContext, VectorStoreIndex,LangchainEmbedding, PromptHelper, LLMPredictor
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
@@ -11,7 +12,9 @@ from llama_index import (
 )
 from llama_index.callbacks.base import CallbackManager
 import openai
+
 import chainlit as cl
+from chainlit.llama_index.callbacks import LlamaIndexCallbackHandler
 
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
@@ -21,7 +24,7 @@ openai.api_key = os.environ.get("OPENAI_API_KEY")
 def load_context():
     try:
         # Rebuild the storage context
-        storage_context = StorageContext.from_defaults(persist_dir="./storage", callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]))
+        storage_context = StorageContext.from_defaults(persist_dir="./storage", callback_manager=CallbackManager([LlamaIndexCallbackHandler()]))
         # Load the index
         index = load_index_from_storage(storage_context, storage_context=storage_context)
     except:
@@ -53,7 +56,7 @@ def load_context():
             # embed_model=embed_model, ## (optional)
             # node_parser=node_parser, ## (optional)
             prompt_helper=prompt_helper,
-            callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]),
+            callback_manager=CallbackManager([LlamaIndexCallbackHandler()]),
 
         )
         index = VectorStoreIndex.from_documents(documents,service_context=service_context)

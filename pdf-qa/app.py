@@ -10,6 +10,7 @@ import pinecone
 
 import chainlit as cl
 from chainlit.types import AskFileResponse
+from chainlit.langchain.callbacks import AsyncLangchainCallbackHandler
 
 pinecone.init(
     api_key=os.environ.get("PINECONE_API_KEY"),
@@ -103,7 +104,7 @@ async def start():
 @cl.on_message
 async def main(message):
     chain = cl.user_session.get("chain")  # type: RetrievalQAWithSourcesChain
-    cb = cl.AsyncLangchainCallbackHandler(
+    cb = AsyncLangchainCallbackHandler(
         stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
     )
     cb.answer_reached = True

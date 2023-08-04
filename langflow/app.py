@@ -2,8 +2,9 @@ import json
 
 from langchain.agents import AgentExecutor
 
-from chainlit.langflow import load_flow
 import chainlit as cl
+from chainlit.langflow import load_flow
+from chainlit.langchain.callbacks import LangchainCallbackHandler
 
 
 with open("./schema.json", "r") as f:
@@ -26,7 +27,7 @@ async def main(message):
 
     # Run the flow
     res = await cl.make_async(flow.run)(
-        message, callbacks=[cl.LangchainCallbackHandler()]
+        message, callbacks=[LangchainCallbackHandler()]
     )
 
     # Send the response

@@ -6,6 +6,7 @@ from langchain.tools import BaseTool
 
 import chainlit as cl
 from chainlit.sync import run_sync
+from chainlit.langchain.callbacks import AsyncLangchainCallbackHandler
 
 
 class HumanInputChainlit(BaseTool):
@@ -63,5 +64,5 @@ def start():
 @cl.on_message
 async def main(message):
     agent = cl.user_session.get("agent")  # type: AgentExecutor
-    res = await agent.arun(message, callbacks=[cl.AsyncLangchainCallbackHandler()])
+    res = await agent.arun(message, callbacks=[AsyncLangchainCallbackHandler()])
     await cl.Message(content=res).send()
