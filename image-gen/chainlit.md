@@ -2,6 +2,8 @@
 
 Welcome to our creative image generation demo built with [Chainlit](https://chainlit.io), [LangChain](https://python.langchain.com/en/latest/index.html), and [Stability AI](https://stability.ai/)! 🌟 This app allows you to create and edit unique images simply by chatting with it. Talk about having an artistic conversation! 🎨🗨️
 
+This demo has also been adapted to use the new [ChatSettings](https://docs.chainlit.io/concepts/chat-settings) feature introduced in chainlit `0.6.2`. You are now able to tweak Stability AI settings to your liking!
+
 ## 🎯 Example
 
 Try asking:
