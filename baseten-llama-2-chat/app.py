@@ -30,7 +30,7 @@ async def main(message: str):
         data=json.dumps({
             "prompt": prompt,
             "stream": True,
-            "max_tokens": 4096
+            "max_new_tokens": 4096
         }),
         stream=True
     ) as resp:
