@@ -44,13 +44,13 @@ def start():
     llm1 = OpenAI(temperature=0, streaming=True)
     llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
 
-    # fyi, the calculator tool only has a sync implementation
     tools = [
         HumanInputChainlit(),
         Tool(
             name="Calculator",
             func=llm_math_chain.run,
             description="useful for when you need to answer questions about math",
+            coroutine=llm_math_chain.arun
         ),
     ]
     agent = initialize_agent(
