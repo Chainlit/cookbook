@@ -1,6 +1,8 @@
 import os
 import anthropic
 import chainlit as cl
+from chainlit.prompt import Prompt
+from chainlit.playground.providers import Anthropic
 
 c = anthropic.AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
@@ -23,19 +25,33 @@ async def chat(message: str):
 
     prompt = f"{prompt_history}{anthropic.HUMAN_PROMPT}{message}{anthropic.AI_PROMPT}"
 
-    ui_msg = cl.Message(author="Anthropic", content="")
+    settings = {
+        "stop_sequences": [anthropic.HUMAN_PROMPT],
+        "max_tokens_to_sample": 1000,
+        "model": "claude-2.0",
+    }
+
+    ui_msg = cl.Message(
+        author="Anthropic",
+        content="",
+    )
 
     stream = await c.completions.create(
         prompt=prompt,
-        stop_sequences=[anthropic.HUMAN_PROMPT],
-        max_tokens_to_sample=1000,
-        model="claude-2.0",  # claude-instant-1.1
         stream=True,
+        **settings,
     )
 
     async for data in stream:
         token = data.completion
         await ui_msg.stream_token(token)
+
+    ui_msg.prompt = Prompt(
+        formatted=prompt,
+        completion=ui_msg.content,
+        settings=settings,
+        provider=Anthropic.id,
+    )
 
     await ui_msg.send()
 

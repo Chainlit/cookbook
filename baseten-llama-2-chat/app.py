@@ -3,11 +3,10 @@ import requests
 import json
 
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
 version_id = os.environ["VERSION_ID"]
 baseten_api_key = os.environ["BASETEN_API_KEY"]
+
 
 @cl.on_message
 async def main(message: str):
@@ -18,26 +17,19 @@ async def main(message: str):
     ui_msg = cl.Message(
         author="Llama 2",
         content="",
-        prompt=prompt
     )
 
     s = requests.Session()
     with s.post(
         f"https://app.baseten.co/model_versions/{version_id}/predict",
-        headers= {
-            "Authorization": f"Api-Key {baseten_api_key}"
-        },
-        data=json.dumps({
-            "prompt": prompt,
-            "stream": True,
-            "max_new_tokens": 4096
-        }),
-        stream=True
+        headers={"Authorization": f"Api-Key {baseten_api_key}"},
+        data=json.dumps({"prompt": prompt, "stream": True, "max_new_tokens": 4096}),
+        stream=True,
     ) as resp:
         buffer = ""
         start_response = False
         for token in resp.iter_content(1):
-            token = token.decode('utf-8')
+            token = token.decode("utf-8")
             buffer += token
             if not start_response:
                 if "[/INST]" in buffer:
