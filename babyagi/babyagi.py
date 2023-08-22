@@ -8,7 +8,6 @@ import openai
 import chromadb
 import tiktoken as tiktoken
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
-from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 import re
 import chainlit as cl
 

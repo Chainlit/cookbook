@@ -1,6 +1,5 @@
 import os
 
-from dotenv import load_dotenv
 from datasets import load_dataset
 from haystack.agents.base import Tool
 from haystack.agents.conversational import ConversationalAgent
@@ -11,7 +10,6 @@ from haystack.pipelines import DocumentSearchPipeline
 
 import chainlit as cl
 
-load_dotenv()
 
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 if not openai_api_key:
@@ -43,13 +41,13 @@ def get_agent(retriever):
         "gpt-3.5-turbo",
         api_key=openai_api_key,
         max_length=256,
-        stop_words=["Observation:"]
+        stop_words=["Observation:"],
     )
 
     memory = ConversationSummaryMemory(
-        conversational_agent_prompt_node, 
-        prompt_template='deepset/conversational-summary',
-        summary_frequency=3
+        conversational_agent_prompt_node,
+        prompt_template="deepset/conversational-summary",
+        summary_frequency=3,
     )
 
     agent_prompt = """
@@ -101,7 +99,7 @@ async def init():
     question = "What did Rhodes Statue look like?"
     await cl.Message(author="User", content=question).send()
     response = await cl.make_async(agent.run)(question)
-    await cl.Message(author="Agent", content=response['answers'][0].answer).send()
+    await cl.Message(author="Agent", content=response["answers"][0].answer).send()
 
     # Ask follow up questions since the agent remembers the conversation:
 
@@ -114,4 +112,3 @@ async def init():
     # await cl.Message(author="User", content=question).send()
     # response = await cl.make_async(agent.run)(question)
     # await cl.Message(author="Agent", content=response['answers'][0].answer).send()
-    
