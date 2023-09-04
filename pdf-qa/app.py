@@ -1,11 +1,14 @@
 import os
-
+from typing import List
 from langchain.document_loaders import PyPDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Pinecone
-from langchain.chains import RetrievalQAWithSourcesChain
+from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
+from langchain.memory import ChatMessageHistory, ConversationBufferMemory
+from langchain.docstore.document import Document
+
 import pinecone
 
 import chainlit as cl
@@ -70,6 +73,10 @@ def get_docsearch(file: AskFileResponse):
 
 @cl.on_chat_start
 async def start():
+    await cl.Avatar(
+        name="Chatbot",
+        url="https://avatars.githubusercontent.com/u/128686189?s=400&u=a1d1553023f8ea0921fba0debbe92a8c5f840dd9&v=4",
+    ).send()
     files = None
     while files is None:
         files = await cl.AskFileMessage(
@@ -87,10 +94,21 @@ async def start():
     # No async implementation in the Pinecone client, fallback to sync
     docsearch = await cl.make_async(get_docsearch)(file)
 
-    chain = RetrievalQAWithSourcesChain.from_chain_type(
-        ChatOpenAI(temperature=0, streaming=True),
+    message_history = ChatMessageHistory()
+
+    memory = ConversationBufferMemory(
+        memory_key="chat_history",
+        output_key="answer",
+        chat_memory=message_history,
+        return_messages=True,
+    )
+
+    chain = ConversationalRetrievalChain.from_llm(
+        ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, streaming=True),
         chain_type="stuff",
-        retriever=docsearch.as_retriever(max_tokens_limit=4097),
+        retriever=docsearch.as_retriever(),
+        memory=memory,
+        return_source_documents=True,
     )
 
     # Let the user know that the system is ready
@@ -102,45 +120,34 @@ async def start():
 
 @cl.on_message
 async def main(message):
-    chain = cl.user_session.get("chain")  # type: RetrievalQAWithSourcesChain
+    chain = cl.user_session.get("chain")  # type: ConversationalRetrievalChain
     cb = cl.AsyncLangchainCallbackHandler(
-        stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
+        stream_final_answer=True,
     )
     cb.answer_reached = True
     res = await chain.acall(message, callbacks=[cb])
-
     answer = res["answer"]
-    sources = res["sources"].strip()
-    source_elements = []
+    source_documents = res["source_documents"]  # type: List[Document]
 
-    # Get the documents from the user session
-    docs = cl.user_session.get("docs")
-    metadatas = [doc.metadata for doc in docs]
-    all_sources = [m["source"] for m in metadatas]
+    text_elements = []  # type: List[cl.Text]
 
-    if sources:
-        found_sources = []
-
-        # Add the sources to the message
-        for source in sources.split(","):
-            source_name = source.strip().replace(".", "")
-            # Get the index of the source
-            try:
-                index = all_sources.index(source_name)
-            except ValueError:
-                continue
-            text = docs[index].page_content
-            found_sources.append(source_name)
+    if source_documents:
+        for source_idx, source_doc in enumerate(source_documents):
+            source_name = f"source_{source_idx}"
             # Create the text element referenced in the message
-            source_elements.append(cl.Text(content=text, name=source_name))
+            text_elements.append(
+                cl.Text(content=source_doc.page_content, name=source_name)
+            )
+        source_names = [text_el.name for text_el in text_elements]
 
-        if found_sources:
-            answer += f"\nSources: {', '.join(found_sources)}"
+        if source_names:
+            answer += f"\nSources: {', '.join(source_names)}"
         else:
             answer += "\nNo sources found"
 
     if cb.has_streamed_final_answer:
-        cb.final_stream.elements = source_elements
+        cb.final_stream.content = answer
+        cb.final_stream.elements = text_elements
         await cb.final_stream.update()
     else:
-        await cl.Message(content=answer, elements=source_elements).send()
+        await cl.Message(content=answer, elements=text_elements).send()
