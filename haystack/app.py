@@ -104,11 +104,10 @@ async def init():
     # Ask follow up questions since the agent remembers the conversation:
 
     # question = "When did it collapse?"
-    # await cl.Message(author="User", content=question).send()
-    # response = await cl.make_async(agent.run)(question)
-    # await cl.Message(author="Agent", content=response['answers'][0].answer).send()
-
     # question = "How tall was it?"
-    # await cl.Message(author="User", content=question).send()
-    # response = await cl.make_async(agent.run)(question)
-    # await cl.Message(author="Agent", content=response['answers'][0].answer).send()
+
+
+@cl.on_message
+async def answer(message: str):
+    response = await cl.make_async(agent.run)(message)
+    await cl.Message(author="Agent", content=response["answers"][0].answer).send()
