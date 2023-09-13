@@ -16,3 +16,7 @@ This is an example combining both to provide a code interpreter-like app.
 1. Select your LLM
 2. (Optional) Upload a file
 3. Chat away!
+
+
+https://github.com/Chainlit/cookbook/assets/16107237/9bc3f5e2-2976-43c1-a6a3-1cb3d0f5dc58
+
