@@ -55,10 +55,7 @@ async def start():
 async def main(message):
     chain = cl.user_session.get("chain")  # type: ConversationalRetrievalChain
 
-    cb = cl.AsyncLangchainCallbackHandler(
-        stream_final_answer=True,
-    )
-    cb.answer_reached = True
+    cb = cl.AsyncLangchainCallbackHandler()
 
     res = await chain.acall(message, callbacks=[cb])
     answer = res["answer"]
@@ -80,9 +77,4 @@ async def main(message):
         else:
             answer += "\nNo sources found"
 
-    if cb.has_streamed_final_answer:
-        cb.final_stream.content = answer
-        cb.final_stream.elements = text_elements
-        await cb.final_stream.update()
-    else:
-        await cl.Message(content=answer, elements=text_elements).send()
+    await cl.Message(content=answer, elements=text_elements).send()

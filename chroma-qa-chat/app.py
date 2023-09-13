@@ -43,12 +43,17 @@ async def init():
     # Wait for the user to upload a file
     while files == None:
         files = await cl.AskFileMessage(
-            content="Please upload a text file to begin!", accept=["text/plain"]
+            content="Please upload a text file to begin!",
+            accept=["text/plain"],
+            disable_human_feedback=True,
         ).send()
 
     file = files[0]
 
-    msg = cl.Message(content=f"Processing `{file.name}`...")
+    msg = cl.Message(
+        content=f"Processing `{file.name}`...",
+        disable_human_feedback=True,
+    )
     await msg.send()
 
     # Decode the file

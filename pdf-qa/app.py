@@ -84,11 +84,14 @@ async def start():
             accept=["text/plain", "application/pdf"],
             max_size_mb=20,
             timeout=180,
+            disable_human_feedback=True,
         ).send()
 
     file = files[0]
 
-    msg = cl.Message(content=f"Processing `{file.name}`...")
+    msg = cl.Message(
+        content=f"Processing `{file.name}`...", disable_human_feedback=True
+    )
     await msg.send()
 
     # No async implementation in the Pinecone client, fallback to sync
@@ -121,10 +124,7 @@ async def start():
 @cl.on_message
 async def main(message):
     chain = cl.user_session.get("chain")  # type: ConversationalRetrievalChain
-    cb = cl.AsyncLangchainCallbackHandler(
-        stream_final_answer=True,
-    )
-    cb.answer_reached = True
+    cb = cl.AsyncLangchainCallbackHandler()
     res = await chain.acall(message, callbacks=[cb])
     answer = res["answer"]
     source_documents = res["source_documents"]  # type: List[Document]
@@ -145,9 +145,4 @@ async def main(message):
         else:
             answer += "\nNo sources found"
 
-    if cb.has_streamed_final_answer:
-        cb.final_stream.content = answer
-        cb.final_stream.elements = text_elements
-        await cb.final_stream.update()
-    else:
-        await cl.Message(content=answer, elements=text_elements).send()
+    await cl.Message(content=answer, elements=text_elements).send()
