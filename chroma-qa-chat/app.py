@@ -129,6 +129,7 @@ async def main(message):
 
     if cb.has_streamed_final_answer:
         cb.final_stream.elements = source_elements
+        cb.final_stream.content = answer
         await cb.final_stream.update()
     else:
         await cl.Message(content=answer, elements=source_elements).send()
