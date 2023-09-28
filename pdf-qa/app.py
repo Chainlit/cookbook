@@ -39,13 +39,13 @@ def process_file(file: AskFileResponse):
     elif file.type == "application/pdf":
         Loader = PyPDFLoader
 
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as tempfile:
+    with tempfile.NamedTemporaryFile(mode="wb", delete=False) as tempfile:
         if file.type == "text/plain":
             tempfile.write(file.content)
         elif file.type == "application/pdf":
-            with open(tempfile.name, 'wb') as f:  
+            with open(tempfile.name, "wb") as f:
                 f.write(file.content)
-                
+
         loader = Loader(tempfile.name)
         documents = loader.load()
         docs = text_splitter.split_documents(documents)
