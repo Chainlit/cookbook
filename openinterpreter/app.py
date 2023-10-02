@@ -16,12 +16,13 @@ class CustomStdout:
 
     def write(self, data):
         # React to the data being written. For this example, I'm just printing to stderr.
-        language = ""
-        if interpreter.active_block and type(interpreter.active_block).__name__ == "CodeBlock":
-            if interpreter.active_block.language:
-                language = interpreter.active_block.language
+        # language = ""
+        # if interpreter.active_block and type(interpreter.active_block).__name__ == "CodeBlock":
+        #     if interpreter.active_block.language:
+        #         language = interpreter.active_block.language
         if data != "\n" and data != "":
-            cl.run_sync(cl.Message(content=data, language=language).send())
+            # cl.run_sync(cl.Message(content=data, language=language).send())
+            cl.run_sync(cl.Message(content=data).send())
         # Write the data to the original stdout (so it still gets displayed)
         self.original_stdout.write(data)
 
