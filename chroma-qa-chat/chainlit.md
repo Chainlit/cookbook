@@ -1,11 +1,14 @@
-# ⚠️ Warning ⚠️
+# Welcome to Chainlit! 🚀🤖
 
-You will need a GPT-4 API key to use this app due to large context size!
+Hi there, Developer! 👋 We're excited to have you on board. Chainlit is a powerful tool designed to help you prototype, debug and share applications built on top of LLMs.
 
-# Welcome to AskArxiv powered by Chainlit!
+## Useful Links 🔗
 
-In this app, you'll be able to enter a topic - and then ask ~30 papers from Arxiv about that topic!
+- **Documentation:** Get started with our comprehensive [Chainlit Documentation](https://docs.chainlit.io) 📚
+- **Discord Community:** Join our friendly [Chainlit Discord](https://discord.gg/k73SQ3FyUh) to ask questions, share your projects, and connect with other developers! 💬
 
-### Link To Demo
+We can't wait to see what you create with Chainlit! Happy coding! 💻😊
 
-[Hugging Face Space]()
+## Welcome screen
+
+To modify the welcome screen, edit the `chainlit.md` file at the root of your project. If you do not want a welcome screen, just leave this file empty.

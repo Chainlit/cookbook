@@ -75,6 +75,7 @@ async def init():
         ChatOpenAI(temperature=0, streaming=True),
         chain_type="stuff",
         retriever=docsearch.as_retriever(),
+        chain_type_kwargs=chain_type_kwargs,
     )
 
     # Save the metadata and texts in the user session
