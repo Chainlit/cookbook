@@ -8,3 +8,5 @@
 This example is an adapted tutorial from the haystack website using chainlit and the `HaystackAgentCallbackHandler`
 
 ![Screenshot](./Screenshot.png)
+Title: Conversational Agent with Deepset Haystack
+Tags: [deepset, haystack]

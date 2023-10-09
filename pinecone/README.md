@@ -6,3 +6,5 @@ This folder is showing how to:
 
 
 To run the example, follow the instructions of the [main readme](/README.md).
+Title: Chat your Pinecone database
+Tags: [pinecone]

@@ -12,3 +12,5 @@ This script is a great starting point for anyone looking to build a chatbot with
 
 
 ![Rendering](./concurrent.gif)
+Title: Concurrent Streaming with OpenAI
+Tags: [open-ai, concurrent-streaming]

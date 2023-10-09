@@ -8,3 +8,5 @@ This Python script is an example on how to ask the end-user a question.
 
 https://github.com/Chainlit/cookbook/assets/16107237/5352b277-4eef-4716-a4f4-233864bf696e
 
+Title: Ask Human 
+Tags: [ask-human]
