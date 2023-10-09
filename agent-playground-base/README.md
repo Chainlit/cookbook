@@ -68,4 +68,4 @@ To leverage the prompt playground feature in this repository, follow these steps
 That's it! You can now leverage the prompt playground feature in your application using the code from this repository.
 
 Title : Agent Playground Base
-Tags : [agent, playground, base]s
+Tags : [agent, playground, base]
