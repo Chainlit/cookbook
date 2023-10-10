@@ -80,3 +80,8 @@ def modify_message_history(message_history):
   message_history.pop(0)
 
   return message_history
+
+message_history = modify_message_history(message_history)
+cl.user_session.set("message_history", message_history)
+
+
