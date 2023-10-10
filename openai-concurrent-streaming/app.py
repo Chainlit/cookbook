@@ -61,3 +61,22 @@ async def main(message: str):
     message_history.append({"role": "user", "content": message})
 
     await asyncio.gather(answer_as("Gilfoyle"), answer_as("Dinesh"))
+
+def modify_message_history(message_history):
+  """Modifies the message history in some way.
+
+  Args:
+    message_history: A list of dictionaries, where each dictionary represents a
+      message.
+
+  Returns:
+    A modified list of dictionaries, where each dictionary represents a message.
+  """
+
+  # Add a new message to the message history.
+  message_history.append({"role": "system", "content": "This is a new message."})
+
+  # Remove the oldest message from the message history.
+  message_history.pop(0)
+
+  return message_history
