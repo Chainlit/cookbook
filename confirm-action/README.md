@@ -6,4 +6,4 @@ To run the example, follow the instructions of the [main readme](/README.md).
 
 ![Rendering](./rendering.png)
 Title: Confirm with Actions
-Tags: [actions, confirm]
+Tags: [actions]

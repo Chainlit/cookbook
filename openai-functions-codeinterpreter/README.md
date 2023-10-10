@@ -69,4 +69,4 @@ Contributions are welcome! Please read the contribution guide to learn how to co
 This project is licensed under the terms of the MIT license.
 
 title : OpenAI Functions CodeInterpreter
-tags : [openai, functions, codeinterpreter]
+tags : [openai, codeinterpreter]

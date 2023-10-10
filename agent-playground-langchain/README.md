@@ -5,4 +5,4 @@ More info and a video here: https://docs.chainlit.io/concepts/prompt-playground/
 
 
 Title : Agent Playground Langchain
-Tags : [agent, playground, langchain]
+Tags : [playground, langchain]
