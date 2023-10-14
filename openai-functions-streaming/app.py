@@ -57,7 +57,6 @@ async def process_new_delta(
             openai_message["function_call"] = {
                 "name": new_delta["function_call"]["name"]
             }
-            await content_ui_message.send()
             function_ui_message = cl.Message(
                 author=new_delta["function_call"]["name"],
                 content="",
