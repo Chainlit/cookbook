@@ -9,9 +9,9 @@ baseten_api_key = os.environ["BASETEN_API_KEY"]
 
 
 @cl.on_message
-async def main(message: str):
+async def main(message: cl.Message):
     prompt_history = cl.user_session.get("prompt_history")
-    prompt = f"{prompt_history}{message}"
+    prompt = f"{prompt_history}{message.content}"
     response = ""
 
     ui_msg = cl.Message(
@@ -41,5 +41,5 @@ async def main(message: str):
     await ui_msg.send()
     if not prompt_history:
         prompt_history = ""
-    prompt_history += message + response
+    prompt_history += message.content + response
     cl.user_session.set("prompt_history", prompt_history)

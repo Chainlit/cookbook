@@ -86,9 +86,9 @@ def start_chat():
 
 
 @cl.on_message
-async def run_conversation(user_message: str):
+async def run_conversation(message: cl.Message):
     message_history = cl.user_session.get("message_history")
-    message_history.append({"role": "user", "content": user_message})
+    message_history.append({"role": "user", "content": message.content})
 
     cur_iter = 0
 

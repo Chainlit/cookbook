@@ -56,8 +56,8 @@ async def answer_as(name):
 
 
 @cl.on_message
-async def main(message: str):
+async def main(message: cl.Message):
     message_history = cl.user_session.get("message_history")
-    message_history.append({"role": "user", "content": message})
+    message_history.append({"role": "user", "content": message.content})
 
     await asyncio.gather(answer_as("Gilfoyle"), answer_as("Dinesh"))

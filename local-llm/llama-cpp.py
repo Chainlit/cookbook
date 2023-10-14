@@ -62,7 +62,7 @@ The following is a friendly conversation between a human and an AI optimized to 
 
 
 @cl.on_message
-async def main(message: str):
+async def main(message: cl.Message):
     conversation = cl.user_session.get("conv_chain")
 
     cb = cl.LangchainCallbackHandler(
@@ -71,4 +71,4 @@ async def main(message: str):
 
     cb.answer_reached = True
 
-    res = await cl.make_async(conversation)(message, callbacks=[cb])
+    res = await cl.make_async(conversation)(message.content, callbacks=[cb])

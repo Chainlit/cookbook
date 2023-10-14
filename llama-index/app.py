@@ -55,9 +55,9 @@ async def factory():
 
 
 @cl.on_message
-async def main(message):
+async def main(message: cl.Message):
     query_engine = cl.user_session.get("query_engine")  # type: RetrieverQueryEngine
-    response = await cl.make_async(query_engine.query)(message)
+    response = await cl.make_async(query_engine.query)(message.content)
 
     response_message = cl.Message(content="")
 

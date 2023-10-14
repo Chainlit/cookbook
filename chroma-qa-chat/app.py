@@ -90,13 +90,13 @@ async def init():
 
 
 @cl.on_message
-async def main(message):
+async def main(message: cl.Message):
     chain = cl.user_session.get("chain")  # type: RetrievalQAWithSourcesChain
     cb = cl.AsyncLangchainCallbackHandler(
         stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
     )
     cb.answer_reached = True
-    res = await chain.acall(message, callbacks=[cb])
+    res = await chain.acall(message.content, callbacks=[cb])
 
     answer = res["answer"]
     sources = res["sources"].strip()

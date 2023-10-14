@@ -7,7 +7,7 @@ async def on_start():
 
 
 @cl.on_message
-async def on_message(message):
+async def on_message(message: cl.Message):
     await cl.Message(
-        f"Received message: {message}. This demo is all about deploying your Chainlit app on Fly.io, nothing else!"
+        f"Received message: {message.content}. This demo is all about deploying your Chainlit app on Fly.io, nothing else!"
     ).send()

@@ -52,12 +52,12 @@ async def start():
 
 
 @cl.on_message
-async def main(message):
+async def main(message: cl.Message):
     chain = cl.user_session.get("chain")  # type: ConversationalRetrievalChain
 
     cb = cl.AsyncLangchainCallbackHandler()
 
-    res = await chain.acall(message, callbacks=[cb])
+    res = await chain.acall(message.content, callbacks=[cb])
     answer = res["answer"]
     source_documents = res["source_documents"]  # type: List[Document]
 

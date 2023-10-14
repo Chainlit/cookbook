@@ -7,6 +7,7 @@ import sys, os
 interpreter.api_key = os.getenv("OPENAI_API_KEY")
 # interpreter.debug_mode=True
 
+
 # 1. Custom StdOut class to output prints to Chainlit UI
 # 2. Custom StdIn class to receive input from Chainlit UI
 # WARNING: Do not write prints in there, otherwise infinite loop
@@ -43,7 +44,6 @@ class CustomStdin:
         self.original_stdin.flush()
 
 
-
 @cl.on_chat_start
 async def start():
     sys.stdout = CustomStdout(sys.__stdout__)
@@ -59,6 +59,7 @@ async def start():
         ]
     ).send()
     interpreter.model = settings["model"]
+
 
 @cl.on_file_upload(accept=["text/plain"], max_files=3, max_size_mb=2)
 async def upload_file(files: any):
@@ -80,11 +81,14 @@ async def upload_file(files: any):
         content = file_data["content"]
         # If want to show content Content: {content.decode('utf-8')}\n\n
         await cl.Message(content=f"Uploaded file: {file_name}\n").send()
-        
+
         # Save the file locally
         with open(file_name, "wb") as file:
             file.write(content)
-        interpreter.load([{"role":"assistant", "content":f"User uploaded file: {file_name}"}])
+        interpreter.load(
+            [{"role": "assistant", "content": f"User uploaded file: {file_name}"}]
+        )
+
 
 @cl.on_settings_update
 async def setup_agent(settings):
@@ -93,5 +97,5 @@ async def setup_agent(settings):
 
 
 @cl.on_message
-def main(message: str):
-    interpreter.chat(message)
+def main(message: cl.Message):
+    interpreter.chat(message.content)

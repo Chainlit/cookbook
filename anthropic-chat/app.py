@@ -20,10 +20,10 @@ async def start_chat():
 
 
 @cl.on_message
-async def chat(message: str):
+async def chat(message: cl.Message):
     prompt_history = cl.user_session.get("prompt_history")
 
-    prompt = f"{prompt_history}{anthropic.HUMAN_PROMPT}{message}{anthropic.AI_PROMPT}"
+    prompt = f"{prompt_history}{anthropic.HUMAN_PROMPT}{message.content}{anthropic.AI_PROMPT}"
 
     settings = {
         "stop_sequences": [anthropic.HUMAN_PROMPT],
