@@ -1,3 +1,6 @@
+Title: OpenInterpreter x Chainlit
+Tags: [openinterpreter]
+
 # Welcome to OpenInterpreter x Chainlit! 🚀🤖
 
 **OpenInterpreter**: https://github.com/KillianLucas/open-interpreter/
@@ -20,5 +23,3 @@ This is an example combining both to provide a code interpreter-like app.
 
 https://github.com/Chainlit/cookbook/assets/16107237/9bc3f5e2-2976-43c1-a6a3-1cb3d0f5dc58
 
-Title: OpenInterpreter x Chainlit
-Tags: [openinterpreter]

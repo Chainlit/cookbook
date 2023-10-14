@@ -1,3 +1,6 @@
+Title : Agent Playground Langchain Model Kwargs
+Tags : [playground, langchain]
+
 # Agent Prompt Playground
 The Prompt Playground is a unique feature that allows developers to visualize, iterate, and version prompts, thereby enhancing the development/debugging process.
 
@@ -31,5 +34,3 @@ To use this custom provider example, follow these steps:
 
 Building a custom provider for Chainlit allows you to extend its functionality and leverage the power of Langchain LLMs that use `model_kwargs`. This example repository provides a starting point for creating your own custom providers and integrating them into your Chainlit applications.
 
-Title : Agent Playground Langchain Model Kwargs
-Tags : [playground, langchain]

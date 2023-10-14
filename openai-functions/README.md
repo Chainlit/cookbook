@@ -1,3 +1,6 @@
+Title: OpenAI functions with Chainlit
+Tags: [openai-functions]
+
 # OpenAI functions with Chainlit
 
 This folder is showing how to use OpenAI functions with Chainlit.

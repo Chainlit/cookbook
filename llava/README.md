@@ -1,3 +1,6 @@
+Title: Multimodal chat 
+Tags: [multimodal]
+
 # LLaVa with Chainlit
 
 https://github.com/Chainlit/cookbook/assets/13104895/01904f09-b1f2-4755-ae42-5a4276bd46e1

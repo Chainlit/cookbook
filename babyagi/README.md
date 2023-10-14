@@ -1,3 +1,6 @@
+Title : BabyAGI
+Tags : [autonomous-agent]
+
 # Chainlit BabyAGI integration demo
 
 This is a demo of an integration of Chainlit with BabyAGI.
@@ -30,5 +33,3 @@ chainlit run babyagi.py
 
 The code is based on the [BabyAGI](https://github.com/yoheinakajima/babyagi/) repository by [Yohei Nakajima](https://twitter.com/yoheinakajima).
 
-Title : BabyAGI
-Tags : [babyagi, autonomous-agent]

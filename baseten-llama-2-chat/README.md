@@ -1,3 +1,6 @@
+Title : Baseten Llama 2 Chat
+Tags : [llama-2, open-source]
+
 # OSS ChatGPT
 
 Welcome to a chat interface for open-source models like LLama 2.
@@ -30,5 +33,3 @@ VERSION_ID=abcd123
 ```
 chainlit run app.py -w
 ```
-Title : Baseten Llama 2 Chat
-Tags : [baseten, llama_2, open-source]
