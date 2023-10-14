@@ -66,3 +66,6 @@ To leverage the prompt playground feature in this repository, follow these steps
 6. Run your application and interact with the prompt using the provided template.
 
 That's it! You can now leverage the prompt playground feature in your application using the code from this repository.
+
+Title : Agent Playground Base
+Tags : [playground]

@@ -10,3 +10,5 @@ This folder is showing how to:
 To run the example, follow the instructions of the [main readme](/README.md).
 
 ![Rendering](./rendering.png)
+Title: PDF Question & Answering
+Tags: [pdf, q&a]

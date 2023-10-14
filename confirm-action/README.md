@@ -5,3 +5,5 @@ This folder is showing how to use [Actions](https://docs.chainlit.io/api-referen
 To run the example, follow the instructions of the [main readme](/README.md).
 
 ![Rendering](./rendering.png)
+Title: Confirm with Actions
+Tags: [actions]

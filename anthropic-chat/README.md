@@ -7,3 +7,6 @@ This folder is showing how to:
 Check out https://www.anthropic.com/
 
 ![Anthropic](./anthropic.jpg)
+
+Title : Your own Claude by Anthropic 🔥
+Tags : [anthropic, claude]

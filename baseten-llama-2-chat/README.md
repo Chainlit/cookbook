@@ -30,3 +30,5 @@ VERSION_ID=abcd123
 ```
 chainlit run app.py -w
 ```
+Title : Baseten Llama 2 Chat
+Tags : [baseten, llama_2, open-source]

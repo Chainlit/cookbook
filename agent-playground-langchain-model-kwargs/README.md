@@ -30,3 +30,6 @@ To use this custom provider example, follow these steps:
 ### Conclusion
 
 Building a custom provider for Chainlit allows you to extend its functionality and leverage the power of Langchain LLMs that use `model_kwargs`. This example repository provides a starting point for creating your own custom providers and integrating them into your Chainlit applications.
+
+Title : Agent Playground Langchain Model Kwargs
+Tags : [playground, langchain]
