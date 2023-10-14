@@ -8,6 +8,7 @@ openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 MAX_ITER = 5
 
+
 # Example dummy function hard coded to return the same weather
 # In production, this could be your backend API or an external API
 def get_current_weather(location, unit):
@@ -42,7 +43,9 @@ functions = [
 ]
 
 
-async def process_new_delta(new_delta, openai_message, content_ui_message, function_ui_message):
+async def process_new_delta(
+    new_delta, openai_message, content_ui_message, function_ui_message
+):
     if "role" in new_delta:
         openai_message["role"] = new_delta["role"]
     if "content" in new_delta:
@@ -52,18 +55,26 @@ async def process_new_delta(new_delta, openai_message, content_ui_message, funct
     if "function_call" in new_delta:
         if "name" in new_delta["function_call"]:
             openai_message["function_call"] = {
-                "name": new_delta["function_call"]["name"]}
+                "name": new_delta["function_call"]["name"]
+            }
             await content_ui_message.send()
             function_ui_message = cl.Message(
                 author=new_delta["function_call"]["name"],
-                content="", indent=1, language="json")
+                content="",
+                indent=1,
+                language="json",
+            )
             await function_ui_message.stream_token(new_delta["function_call"]["name"])
 
         if "arguments" in new_delta["function_call"]:
             if "arguments" not in openai_message["function_call"]:
                 openai_message["function_call"]["arguments"] = ""
-            openai_message["function_call"]["arguments"] += new_delta["function_call"]["arguments"]
-            await function_ui_message.stream_token(new_delta["function_call"]["arguments"])
+            openai_message["function_call"]["arguments"] += new_delta["function_call"][
+                "arguments"
+            ]
+            await function_ui_message.stream_token(
+                new_delta["function_call"]["arguments"]
+            )
     return openai_message, content_ui_message, function_ui_message
 
 
@@ -83,7 +94,6 @@ async def run_conversation(user_message: str):
     cur_iter = 0
 
     while cur_iter < MAX_ITER:
-
         # OpenAI call
         openai_message = {"role": "", "content": ""}
         function_ui_message = None
@@ -94,12 +104,18 @@ async def run_conversation(user_message: str):
             stream=True,
             function_call="auto",
             functions=functions,
-            temperature=0
+            temperature=0,
         ):
-
             new_delta = stream_resp.choices[0]["delta"]
-            openai_message, content_ui_message, function_ui_message = await process_new_delta(
-                new_delta, openai_message, content_ui_message, function_ui_message)
+            (
+                openai_message,
+                content_ui_message,
+                function_ui_message,
+            ) = await process_new_delta(
+                new_delta, openai_message, content_ui_message, function_ui_message
+            )
+
+        await content_ui_message.send()
 
         message_history.append(openai_message)
         if function_ui_message is not None:
@@ -114,7 +130,8 @@ async def run_conversation(user_message: str):
         # if code arrives here, it means there is a function call
         function_name = openai_message.get("function_call").get("name")
         arguments = ast.literal_eval(
-            openai_message.get("function_call").get("arguments"))
+            openai_message.get("function_call").get("arguments")
+        )
 
         function_response = get_current_weather(
             location=arguments.get("location"),
@@ -135,4 +152,5 @@ async def run_conversation(user_message: str):
             language="json",
             indent=1,
         ).send()
+
         cur_iter += 1
