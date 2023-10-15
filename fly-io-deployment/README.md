@@ -1,5 +1,5 @@
 Title: Deploy to Fly.io
-Tags: [fly.io, deployment]
+Tags: [deployment]
 
 # Tutorial repo for deploying to Fly.io
 
