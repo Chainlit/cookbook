@@ -108,6 +108,6 @@ async def init():
 
 
 @cl.on_message
-async def answer(message: str):
-    response = await cl.make_async(agent.run)(message)
+async def answer(message: cl.Message):
+    response = await cl.make_async(agent.run)(message.content)
     await cl.Message(author="Agent", content=response["answers"][0].answer).send()

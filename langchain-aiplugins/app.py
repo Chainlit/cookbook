@@ -22,8 +22,10 @@ def start():
 
 
 @cl.on_message
-async def main(message):
+async def main(message: cl.Message):
     agent = cl.user_session.get("agent")  # type: AgentExecutor
-    res = await agent.arun(message, callbacks=[cl.AsyncLangchainCallbackHandler()])
+    res = await agent.arun(
+        message.content, callbacks=[cl.AsyncLangchainCallbackHandler()]
+    )
 
     await cl.Message(content=res).send()

@@ -17,7 +17,7 @@ async def start():
 
 
 @cl.on_message
-async def main(message):
+async def main(message: cl.Message):
     # Load the flow from the user session
     flow = cl.user_session.get("flow")  # type: AgentExecutor
 
@@ -26,7 +26,7 @@ async def main(message):
 
     # Run the flow
     res = await cl.make_async(flow.run)(
-        message, callbacks=[cl.LangchainCallbackHandler()]
+        message.content, callbacks=[cl.LangchainCallbackHandler()]
     )
 
     # Send the response

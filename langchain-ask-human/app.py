@@ -50,7 +50,7 @@ def start():
             name="Calculator",
             func=llm_math_chain.run,
             description="useful for when you need to answer questions about math",
-            coroutine=llm_math_chain.arun
+            coroutine=llm_math_chain.arun,
         ),
     ]
     agent = initialize_agent(
@@ -61,7 +61,9 @@ def start():
 
 
 @cl.on_message
-async def main(message):
+async def main(message: cl.Message):
     agent = cl.user_session.get("agent")  # type: AgentExecutor
-    res = await agent.arun(message, callbacks=[cl.AsyncLangchainCallbackHandler()])
+    res = await agent.arun(
+        message.content, callbacks=[cl.AsyncLangchainCallbackHandler()]
+    )
     await cl.Message(content=res).send()

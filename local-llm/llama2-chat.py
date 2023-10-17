@@ -66,14 +66,14 @@ async def main():
 
 
 @cl.on_message
-async def run(input_str):
+async def run(message: cl.Message):
     cb = cl.AsyncLangchainCallbackHandler(
         stream_final_answer=True, answer_prefix_tokens=["Answer"]
     )
 
     # Retrieve the chain from the user session
     llm_chain = cl.user_session.get("llm_chain")  # type: LLMChain
-    res = await llm_chain.acall(input_str, callbacks=[cb])
+    res = await llm_chain.acall(message.content, callbacks=[cb])
 
     if not cb.answer_reached:
         await cl.Message(content=res["text"]).send()

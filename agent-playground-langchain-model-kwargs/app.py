@@ -1,4 +1,3 @@
-
 import os
 from chainlit.playground.config import add_llm_provider
 from custom_provider import LangChainModelKwargsGenericProvider
@@ -26,7 +25,6 @@ add_llm_provider(
         llm=llm,
         # If the LLM works with messages, set this to True
         is_chat=False,
-
         inputs=[
             Slider(
                 id="max_length",
@@ -36,7 +34,7 @@ add_llm_provider(
                 step=1,
                 initial=500,
             )
-        ]
+        ],
     )
 )
 
@@ -51,5 +49,7 @@ llm_chain = LLMChain(prompt=prompt, llm=llm)
 
 
 @cl.on_message
-async def main(message: str):
-    response = await llm_chain.arun(message, callbacks=[cl.AsyncLangchainCallbackHandler()])
+async def main(message: cl.Message):
+    response = await llm_chain.arun(
+        message.content, callbacks=[cl.AsyncLangchainCallbackHandler()]
+    )

@@ -115,13 +115,13 @@ async def setup_agent(settings):
 
 
 @cl.on_message
-async def main(message):
+async def main(message: cl.Message):
     agent = cl.user_session.get("agent")  # type: AgentExecutor
     cl.user_session.set("generated_image", None)
 
     # No async implementation in the Stability AI client, fallback to sync
     res = await cl.make_async(agent.run)(
-        input=message, callbacks=[cl.LangchainCallbackHandler()]
+        input=message.content, callbacks=[cl.LangchainCallbackHandler()]
     )
 
     elements = []

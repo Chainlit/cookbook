@@ -39,12 +39,14 @@ def main():
 
 
 @cl.on_message
-async def main(message: str):
+async def main(message: cl.Message):
     # Retrieve the chain from the user session
     llm_chain = cl.user_session.get("llm_chain")  # type: LLMChain
 
     # Call the chain asynchronously
-    res = await llm_chain.acall(message, callbacks=[cl.AsyncLangchainCallbackHandler()])
+    res = await llm_chain.acall(
+        message.content, callbacks=[cl.AsyncLangchainCallbackHandler()]
+    )
 
     # Do any post processing here
 

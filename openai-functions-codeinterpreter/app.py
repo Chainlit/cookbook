@@ -10,12 +10,16 @@ import tiktoken
 import importlib
 import json
 from chainlit import user_session
+
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 openai.api_base = os.environ.get("OPENAI_API_BASE")
 
 # 获取plugins目录下所有的子目录，忽略名为'__pycache__'的目录
-plugin_dirs = [d for d in os.listdir('plugins') 
-               if os.path.isdir(os.path.join('plugins', d)) and d != '__pycache__']
+plugin_dirs = [
+    d
+    for d in os.listdir("plugins")
+    if os.path.isdir(os.path.join("plugins", d)) and d != "__pycache__"
+]
 
 functions = []
 
@@ -23,9 +27,9 @@ functions = []
 for dir in plugin_dirs:
     # 尝试读取插件的配置文件
     try:
-        with open(f'plugins/{dir}/config.json', 'r') as f:
+        with open(f"plugins/{dir}/config.json", "r") as f:
             config = json.load(f)
-        enabled = config.get('enabled', True)
+        enabled = config.get("enabled", True)
     except FileNotFoundError:
         # 如果配置文件不存在，我们默认这个插件应该被导入
         enabled = True
@@ -35,18 +39,18 @@ for dir in plugin_dirs:
         continue
 
     # 动态导入每个插件的functions模块
-    module = importlib.import_module(f'plugins.{dir}.functions')
+    module = importlib.import_module(f"plugins.{dir}.functions")
 
     # 获取模块中的所有函数并添加到functions列表中
-    functions.extend([
-        obj for name, obj in inspect.getmembers(module)
-        if inspect.isfunction(obj)
-    ])
+    functions.extend(
+        [obj for name, obj in inspect.getmembers(module) if inspect.isfunction(obj)]
+    )
 
 function_manager = FunctionManager(functions=functions)
 print("functions:", function_manager.generate_functions_array())
 
 max_tokens = 5000
+
 
 def __truncate_conversation(conversation) -> None:
     """
@@ -57,8 +61,7 @@ def __truncate_conversation(conversation) -> None:
     # 去掉第一条
     conversation = conversation[1:]
     while True:
-        if (get_token_count(conversation) > max_tokens
-                and len(conversation) > 1):
+        if get_token_count(conversation) > max_tokens and len(conversation) > 1:
             # Don't remove the first message
             conversation.pop(1)
         else:
@@ -67,12 +70,13 @@ def __truncate_conversation(conversation) -> None:
     conversation.insert(0, system_con)
     return conversation
 
+
 # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
 def get_token_count(conversation) -> int:
     """
     Get token count
     """
-    encoding = tiktoken.encoding_for_model('gpt-4')
+    encoding = tiktoken.encoding_for_model("gpt-4")
 
     num_tokens = 0
     for message in conversation:
@@ -85,20 +89,21 @@ def get_token_count(conversation) -> int:
     num_tokens += 2  # every reply is primed with <im_start>assistant
     return num_tokens
 
+
 MAX_ITER = 100
 
-async def on_message(user_message: object):
+
+async def on_message(message: cl.Message):
     print("==================================")
-    print(user_message)
+    print(message)
     print("==================================")
-    user_message = str(user_message)
+    user_message = message.content
     message_history = cl.user_session.get("message_history")
     message_history.append({"role": "user", "content": user_message})
 
     cur_iter = 0
 
     while cur_iter < MAX_ITER:
-
         # OpenAI call
         openai_message = {"role": "", "content": ""}
         function_ui_message = None
@@ -107,16 +112,21 @@ async def on_message(user_message: object):
         send_message = __truncate_conversation(message_history)
         try:
             async for stream_resp in await openai.ChatCompletion.acreate(
-                    model="gpt-4",
-                    messages=send_message,
-                    stream=True,
-                    function_call="auto",
-                    functions=function_manager.generate_functions_array(),
-                    temperature=0):  # type: ignore
+                model="gpt-4",
+                messages=send_message,
+                stream=True,
+                function_call="auto",
+                functions=function_manager.generate_functions_array(),
+                temperature=0,
+            ):  # type: ignore
                 new_delta = stream_resp.choices[0]["delta"]
-                openai_message, content_ui_message, function_ui_message = await process_new_delta(
-                    new_delta, openai_message, content_ui_message,
-                    function_ui_message)
+                (
+                    openai_message,
+                    content_ui_message,
+                    function_ui_message,
+                ) = await process_new_delta(
+                    new_delta, openai_message, content_ui_message, function_ui_message
+                )
         except Exception as e:
             print(e)
             cur_iter += 1
@@ -137,21 +147,24 @@ async def on_message(user_message: object):
         function_name = openai_message.get("function_call").get("name")
         print(openai_message.get("function_call"))
         try:
-            arguments = json.loads(
-                openai_message.get("function_call").get("arguments"))
+            arguments = json.loads(openai_message.get("function_call").get("arguments"))
         except:
             arguments = ast.literal_eval(
-                openai_message.get("function_call").get("arguments"))
+                openai_message.get("function_call").get("arguments")
+            )
 
         function_response = await function_manager.call_function(
-            function_name, arguments)
+            function_name, arguments
+        )
         # print(function_response)
 
-        message_history.append({
-            "role": "function",
-            "name": function_name,
-            "content": function_response,
-        })
+        message_history.append(
+            {
+                "role": "function",
+                "name": function_name,
+                "content": function_response,
+            }
+        )
 
         await cl.Message(
             author=function_name,
@@ -161,8 +174,10 @@ async def on_message(user_message: object):
         ).send()
         cur_iter += 1
 
-async def process_new_delta(new_delta, openai_message, content_ui_message,
-                            function_ui_message):
+
+async def process_new_delta(
+    new_delta, openai_message, content_ui_message, function_ui_message
+):
     if "role" in new_delta:
         openai_message["role"] = new_delta["role"]
     if "content" in new_delta:
@@ -179,31 +194,37 @@ async def process_new_delta(new_delta, openai_message, content_ui_message,
                 author=new_delta["function_call"]["name"],
                 content="",
                 indent=1,
-                language="json")
-            await function_ui_message.stream_token(
-                new_delta["function_call"]["name"])
+                language="json",
+            )
+            await function_ui_message.stream_token(new_delta["function_call"]["name"])
 
         if "arguments" in new_delta["function_call"]:
             if "arguments" not in openai_message["function_call"]:
                 openai_message["function_call"]["arguments"] = ""
-            openai_message["function_call"]["arguments"] += new_delta[
-                "function_call"]["arguments"]
+            openai_message["function_call"]["arguments"] += new_delta["function_call"][
+                "arguments"
+            ]
             await function_ui_message.stream_token(
-                new_delta["function_call"]["arguments"])
+                new_delta["function_call"]["arguments"]
+            )
     return openai_message, content_ui_message, function_ui_message
+
 
 @cl.on_chat_start
 def start_chat():
     cl.user_session.set(
         "message_history",
-        [{
-            "role": "system",
-            "content": """
+        [
+            {
+                "role": "system",
+                "content": """
                 you are now chatting with an AI assistant. The assistant is helpful, creative, clever, and very friendly.
-            """
-        }],
+            """,
+            }
+        ],
     )
 
+
 @cl.on_message
-async def run_conversation(user_message: object):
-    await on_message(user_message)
+async def run_conversation(message: cl.Message):
+    await on_message(message)
