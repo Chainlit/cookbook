@@ -61,35 +61,6 @@ async def start():
     interpreter.model = settings["model"]
 
 
-@cl.on_file_upload(accept=["text/plain"], max_files=3, max_size_mb=2)
-async def upload_file(files: any):
-    """
-    Handle uploaded files.
-
-    Args:
-        files (list): List of uploaded file data.
-
-    Example:
-        [{
-            "name": "example.txt",
-            "content": b"File content as bytes",
-            "type": "text/plain"
-        }]
-    """
-    for file_data in files:
-        file_name = file_data["name"]
-        content = file_data["content"]
-        # If want to show content Content: {content.decode('utf-8')}\n\n
-        await cl.Message(content=f"Uploaded file: {file_name}\n").send()
-
-        # Save the file locally
-        with open(file_name, "wb") as file:
-            file.write(content)
-        interpreter.load(
-            [{"role": "assistant", "content": f"User uploaded file: {file_name}"}]
-        )
-
-
 @cl.on_settings_update
 async def setup_agent(settings):
     interpreter.model = settings["model"]
@@ -97,5 +68,18 @@ async def setup_agent(settings):
 
 
 @cl.on_message
-def main(message: cl.Message):
+async def main(message: cl.Message):
+    if message.elements:
+        for element in message.elements:
+            file_name = element.name
+            content = element.content
+            # If want to show content Content: {content.decode('utf-8')}\n\n
+            await cl.Message(content=f"Uploaded file: {file_name}\n").send()
+
+            # Save the file locally
+            with open(file_name, "wb") as file:
+                file.write(content)
+            interpreter.load(
+                [{"role": "assistant", "content": f"User uploaded file: {file_name}"}]
+            )
     interpreter.chat(message.content)
