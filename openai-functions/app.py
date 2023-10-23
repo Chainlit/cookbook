@@ -66,7 +66,9 @@ async def run_conversation(message: cl.Message):
         )
 
         message = response["choices"][0]["message"]
-        await cl.Message(author=message["role"], content=message["content"]).send()
+        root_msg = await cl.Message(
+            author=message["role"], content=message["content"]
+        ).send()
         message_history.append(message)
 
         if not message.get("function_call"):
@@ -79,7 +81,7 @@ async def run_conversation(message: cl.Message):
             author=function_name,
             content=str(message["function_call"]),
             language="json",
-            indent=1,
+            parent_id=root_msg.id,
         ).send()
 
         function_response = get_current_weather(
@@ -99,6 +101,6 @@ async def run_conversation(message: cl.Message):
             author=function_name,
             content=str(function_response),
             language="json",
-            indent=1,
+            parent_id=root_msg.id,
         ).send()
         cur_iter += 1

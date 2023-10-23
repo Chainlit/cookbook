@@ -170,7 +170,7 @@ async def on_message(message: cl.Message):
             author=function_name,
             content=str(function_response),
             language="json",
-            indent=1,
+            parent_id=content_ui_message.id,
         ).send()
         cur_iter += 1
 
@@ -193,7 +193,7 @@ async def process_new_delta(
             function_ui_message = cl.Message(
                 author=new_delta["function_call"]["name"],
                 content="",
-                indent=1,
+                parent_id=content_ui_message.id,
                 language="json",
             )
             await function_ui_message.stream_token(new_delta["function_call"]["name"])
