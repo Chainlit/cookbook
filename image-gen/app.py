@@ -13,7 +13,7 @@ from chainlit.input_widget import Select, Switch, Slider
 async def create_variant(action: Action):
     agent_input = f"Create a variation of {action.value}"
     await cl.Message(content=f"Creating a variation of `{action.value}`.").send()
-    await main(agent_input)
+    await main(cl.Message(content=agent_input))
 
 
 @cl.author_rename
