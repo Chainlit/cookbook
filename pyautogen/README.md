@@ -2,6 +2,8 @@
 
 Example integration of [AutoGen](https://microsoft.github.io/autogen/) with Chainlit.
 
+https://github.com/Chainlit/cookbook/assets/494686/c5d608bd-7480-42cc-b21f-74989d52fd8c
+
 ## Setup
 
 1. Optional: create your python virtual environment and activate it.
