@@ -53,11 +53,18 @@ class ChainlitUserProxyAgent(UserProxyAgent):
                             value="feedback",
                             label="💬 Provide feedback",
                         ),
+                        cl.Action( 
+                            name="exit",
+                            value="exit", 
+                            label="🔚 Exit Conversation" 
+                        ),
                     ],
                 )
             )
             if res.get("value") == "continue":
                 return ""
+            if res.get("value") == "exit":
+                return "exit"
 
         reply = cl.run_sync(ask_helper(cl.AskUserMessage, content=prompt, timeout=60))
 
