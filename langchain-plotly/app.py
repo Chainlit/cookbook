@@ -8,6 +8,8 @@ from langchain_experimental.agents.agent_toolkits import create_csv_agent
 from typing import *
 from langchain.tools import BaseTool
 import PlotlyTool
+from langchain.agents import load_tools
+
 
 import chainlit as cl
 
@@ -58,7 +60,13 @@ async def start():
 @cl.on_message
 async def main(message: cl.Message):
     agent = cl.user_session.get("agent")  # type: AgentExecutor
+    cl.user_session.set("figure", None)
     res = await agent.arun(
         message.content, callbacks=[cl.AsyncLangchainCallbackHandler()]
     )
-    await cl.Message(content=res).send()
+    elements = []
+    figure = cl.user_session.get("figure")
+    if figure:
+        elements.append(cl.Plotly(name="chart", figure=figure, display="inline"))
+
+    await cl.Message(content=res, elements=elements).send()

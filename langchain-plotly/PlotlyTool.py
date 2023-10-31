@@ -9,11 +9,13 @@ from io import StringIO
 from typing import Any, Dict, Optional, Type
 
 import chainlit as cl
-import plotly.io as pio
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+import plotly.io as pio
+import pandas as pd
+import plotly
 from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.tools.base import BaseTool
 
@@ -45,11 +47,12 @@ class PlotlyPythonAstREPLTool(BaseTool):
 
     name: str = "plotly_python_repl_ast"
     description: str = (
-        "A Python shell. Use this to execute python commands. "
+        "A Python shell. Use this to execute python commands to create and display charts and plots, and visualize data with plotly. "
+        "Import `plotly.express` and `plotly.io`. Use `plotly.express` to draw the cart. End with `plotly.io.to_json()` to return the JSON for the plotly chart."
         "Input should be a valid python command. "
         "When using this tool, sometimes output is abbreviated - "
         "make sure it does not look abbreviated before using it in your answer."
-        "Import plotly. Use plotly.express to create the chart. Use the plotly.io.to_json to return the JSON for a plotly chart."
+        "Use this more than the normal repl if the question is about visualizing data, like 'plot the' or 'show the'."
     )
     globals: Optional[Dict] = Field(default_factory=dict)
     locals: Optional[Dict] = Field(default_factory=dict)
@@ -71,16 +74,11 @@ class PlotlyPythonAstREPLTool(BaseTool):
         print("converting to chart:", str)
         try:
             fig = pio.from_json(str)
-            cl.run_sync(
-                cl.Message(
-                    content="chart",
-                    elements=[cl.Plotly(name="chart", figure=fig, display="inline")],
-                ).send()
-            )
-            return "Chart successfully sent to the user."
+            cl.user_session.set("figure", fig)
+            return "Chart successfully sent to the user. Do not show any image in your reply, only present the chart that has been already sent."
         except Exception as e:
             print(e)
-            return str
+            return e
 
     def _run(
         self,
@@ -99,7 +97,11 @@ class PlotlyPythonAstREPLTool(BaseTool):
             io_buffer = StringIO()
             try:
                 with redirect_stdout(io_buffer):
-                    ret = eval(module_end_str, self.globals, self.locals)
+                    ret = eval(
+                        module_end_str,
+                        self.globals,
+                        self.locals,
+                    )
                     if ret is None:
                         return self.send_chart_and_return(io_buffer.getvalue())
                     else:
