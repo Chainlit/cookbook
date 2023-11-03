@@ -17,3 +17,7 @@ pip install chainlit pyautogen
 3. Copy the `.env.sample` file into a new `.env` file. Replace the `api_key` value with your own OpenAI API key.
 
 4. Run the Chainlit app with `chainlit run app.py`. You can change the initial AutoGen prompt in the `app.py` file.
+
+> **Note:** Do not run with `chainlit run app.py -w`.
+
+> **Note:** There is a also the possibility to monkey-patch the methods of the Agent class, instead of creating a child class.
