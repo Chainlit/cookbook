@@ -1,9 +1,13 @@
 import openai
-import json, ast
+import json
+import ast
 import os
 import chainlit as cl
+from openai import OpenAI, AsyncOpenAI
+from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageToolCall
 
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+api_key = os.environ.get("OPENAI_API_KEY")
+client = AsyncOpenAI(api_key=api_key)
 
 MAX_ITER = 5
 
@@ -23,21 +27,24 @@ def get_current_weather(location, unit):
     return json.dumps(weather_info)
 
 
-functions = [
+tools = [
     {
-        "name": "get_current_weather",
-        "description": "Get the current weather in a given location",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "location": {
-                    "type": "string",
-                    "description": "The city and state, e.g. San Francisco, CA",
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "description": "Get the current weather in a given location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA",
+                    },
+                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
                 },
-                "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                "required": ["location"],
             },
-            "required": ["location"],
-        },
+        }
     }
 ]
 
@@ -58,49 +65,55 @@ async def run_conversation(message: cl.Message):
     cur_iter = 0
 
     while cur_iter < MAX_ITER:
-        response = await openai.ChatCompletion.acreate(
-            model="gpt-3.5-turbo-0613",
+        response = await client.chat.completions.create(
+            model="gpt-4",
             messages=message_history,
-            functions=functions,
-            function_call="auto",
+            tools=tools,
+            tool_choice="auto",
         )
-
-        message = response["choices"][0]["message"]
-        root_msg = await cl.Message(
-            author=message["role"], content=message["content"]
+        print(response)
+        message = response.choices[0].message
+        root_msg_id = await cl.Message(
+            author=message.role, content=message.content or ""
         ).send()
+        
         message_history.append(message)
 
-        if not message.get("function_call"):
+        if not message.tool_calls:
             break
 
-        function_name = message["function_call"]["name"]
-        arguments = ast.literal_eval(message["function_call"]["arguments"])
+        for tool_call in message.tool_calls:
 
-        await cl.Message(
-            author=function_name,
-            content=str(message["function_call"]),
-            language="json",
-            parent_id=root_msg.id,
-        ).send()
+            if tool_call.type == "function":
+                function_name = tool_call.function.name
+                arguments = ast.literal_eval(
+                    tool_call.function.arguments)
 
-        function_response = get_current_weather(
-            location=arguments.get("location"),
-            unit=arguments.get("unit"),
-        )
+                await cl.Message(
+                    author=function_name,
+                    content=str(tool_call.function),
+                    language="json",
+                    parent_id=root_msg_id,
+                ).send()
 
-        message_history.append(
-            {
-                "role": "function",
-                "name": function_name,
-                "content": function_response,
-            }
-        )
+                function_response = get_current_weather(
+                    location=arguments.get("location"),
+                    unit=arguments.get("unit"),
+                )
 
-        await cl.Message(
-            author=function_name,
-            content=str(function_response),
-            language="json",
-            parent_id=root_msg.id,
-        ).send()
+                message_history.append(
+                    {
+                        "role": "tool",
+                        "name": function_name,
+                        "content": function_response,
+                        "tool_call_id": tool_call.id
+                    }
+                )
+
+                await cl.Message(
+                    author=function_name,
+                    content=str(function_response),
+                    language="json",
+                    parent_id=root_msg_id,
+                ).send()
         cur_iter += 1
