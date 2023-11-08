@@ -2,6 +2,7 @@ Title : Agent Playground Base
 Tags : [playground]
 
 # Agent Prompt Playground
+
 The Prompt Playground is a unique feature that allows developers to visualize, iterate, and version prompts, thereby enhancing the development/debugging process.
 
 More info and a video here: https://docs.chainlit.io/concepts/prompt-playground/overview
@@ -13,7 +14,7 @@ To leverage the prompt playground feature in this repository, follow these steps
 1. Import the necessary modules in your application:
 
    ```python
-   import openai
+   from openai import AsyncOpenAI
    import chainlit as cl
    from chainlit.prompt import Prompt, PromptMessage
    from chainlit.playground.providers import ChatOpenAI
@@ -22,6 +23,8 @@ To leverage the prompt playground feature in this repository, follow these steps
 2. Set up the necessary variables for your prompt:
 
    ```python
+   client = AsyncOpenAI()
+
    template = "Hello, {name}!"
    inputs = {"name": "John"}
    settings = {
@@ -51,10 +54,10 @@ To leverage the prompt playground feature in this repository, follow these steps
 4. Make the call to OpenAI and retrieve the completion:
 
    ```python
-   response = await openai.ChatCompletion.acreate(
+   response = await client.chat.completions.create(
        messages=[m.to_openai() for m in prompt.messages], **settings
    )
-   prompt.completion = response.choices[0]["message"]["content"]
+   prompt.completion = response.choices[0].message.content
    ```
 
 5. Send the message using Chainlit:

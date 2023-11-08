@@ -1,6 +1,6 @@
 from datetime import date
 
-import openai
+from openai import AsyncOpenAI
 from google.cloud import bigquery
 
 import chainlit as cl
@@ -9,6 +9,8 @@ from chainlit.playground.providers.openai import ChatOpenAI
 
 # Set up BigQuery client
 client = bigquery.Client(location="EU")
+
+openai_client = AsyncOpenAI()
 
 
 def execute_query(query):
@@ -25,15 +27,7 @@ def execute_query(query):
     return markdown_table
 
 
-settings = {
-    "model": "gpt-4",
-    "temperature": 0,
-    "max_tokens": 500,
-    "top_p": 1,
-    "frequency_penalty": 0,
-    "presence_penalty": 0,
-    "stop": ["```"],
-}
+settings = {"model": "gpt-3.5-turbo", "temperature": 0, "stop": ["```"]}
 
 sql_query_prompt = """You have a BigQuery table named `order` in the dataset `demo`.
 The table contains information about orders, including `order_id`, `order_date`, `estimated_delivery_date`, and `status`.
@@ -77,11 +71,13 @@ async def build_query(message: cl.Message):
     await msg.send()
 
     # Call OpenAI and stream the message
-    async for stream_resp in await openai.ChatCompletion.acreate(
+    stream_resp = await openai_client.chat.completions.create(
         messages=[m.to_openai() for m in prompt.messages], stream=True, **settings
-    ):
-        token = stream_resp.choices[0]["delta"].get("content", "")
-        await msg.stream_token(token)
+    )
+    async for part in stream_resp:
+        token = part.choices[0].delta.content or ""
+        if token:
+            await msg.stream_token(token)
 
     # Update the prompt object with the completion
     prompt.completion = msg.content
@@ -120,11 +116,13 @@ async def run_and_analyze(parent_id: str, query: str):
     await msg.send()
 
     # Call OpenAI and stream the message
-    async for stream_resp in await openai.ChatCompletion.acreate(
+    stream = await openai_client.chat.completions.create(
         messages=[m.to_openai() for m in prompt.messages], stream=True, **settings
-    ):
-        token = stream_resp.choices[0]["delta"].get("content", "")
-        await msg.stream_token(token)
+    )
+    async for part in stream:
+        token = part.choices[0].delta.content or ""
+        if token:
+            await msg.stream_token(token)
 
     # Update the prompt object with the completion
     prompt.completion = msg.content
@@ -147,9 +145,9 @@ async def main(message: cl.Message):
     await run_and_analyze(message.id, query)
 
 
-# @cl.oauth_callback
-# def auth_callback(provider_id: str, token: str, raw_user_data, default_app_user):
-#     if provider_id == "google":
-#         if "@chainlit.io" in raw_user_data["email"]:
-#             return default_app_user
-#     return None
+@cl.oauth_callback
+def auth_callback(provider_id: str, token: str, raw_user_data, default_app_user):
+    if provider_id == "google":
+        if "@chainlit.io" in raw_user_data["email"]:
+            return default_app_user
+    return None

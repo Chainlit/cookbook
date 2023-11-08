@@ -2,7 +2,6 @@ import asyncio
 import subprocess
 import sys
 import chainlit as cl
-import os
 from .executor import PythonExecutor
 
 
@@ -18,35 +17,30 @@ async def python_exec(code: str, language: str = "python"):
     response = {"result": code_output.strip()}
     return response
 
+
 async def need_install_package(package_name: str) -> dict:
     """
-    If the user's question mentions installing packages, and the packages need to be installed, 
+    If the user's question mentions installing packages, and the packages need to be installed,
     you can call this function.
     Parameters: package_name: The name of the package.(required)
     """
     # check if package is already installed
-    cmd_check = [sys.executable, '-m', 'pip', 'show', package_name]
-    proc = subprocess.Popen(cmd_check,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
+    cmd_check = [sys.executable, "-m", "pip", "show", package_name]
+    proc = subprocess.Popen(cmd_check, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, _ = proc.communicate()
     if out:
-        return {'description': f"{package_name} is already installed"}
+        return {"description": f"{package_name} is already installed"}
 
     # install package if it's not installed
-    cmd_install = [sys.executable, '-m', 'pip', 'install', package_name]
+    cmd_install = [sys.executable, "-m", "pip", "install", package_name]
     process = await asyncio.create_subprocess_exec(
-        *cmd_install,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE)
+        *cmd_install, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    )
 
     stdout, stderr = await process.communicate()
 
     if process.returncode != 0:
         await cl.Message(content=f"Failed to install {package_name}.").send()
-        return {
-            'description':
-            f"Error installing {package_name}: {stderr.decode()}"
-        }
+        return {"description": f"Error installing {package_name}: {stderr.decode()}"}
     await cl.Message(content=f"Successfully installed {package_name}.").send()
-    return {'description': f"{package_name} has been successfully installed"}
+    return {"description": f"{package_name} has been successfully installed"}

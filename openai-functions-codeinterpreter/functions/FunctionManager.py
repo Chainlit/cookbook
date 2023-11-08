@@ -3,13 +3,12 @@ import json
 import re
 
 import requests
-import openai
 
 
 class FunctionManager:
     def __init__(self, functions=None):
         self.functions = {}
-        self.excluded_functions = {'inspect', 'create_engine'}  # 添加这行
+        self.excluded_functions = {"inspect", "create_engine"}  # 添加这行
         if functions:
             for func in functions:
                 self.functions[func.__name__] = func
@@ -24,7 +23,7 @@ class FunctionManager:
             "float": "number",
             "bool": "boolean",
             "list": "array",
-            "dict": "object"
+            "dict": "object",
         }
         functions_array = []
 
@@ -36,10 +35,8 @@ class FunctionManager:
             parameters = inspect.signature(function).parameters
 
             # 提取函数描述
-            docstring_lines = docstring.strip().split(
-                '\n') if docstring else []
-            function_description = docstring_lines[0].strip(
-            ) if docstring_lines else ''
+            docstring_lines = docstring.strip().split("\n") if docstring else []
+            function_description = docstring_lines[0].strip() if docstring_lines else ""
 
             # 解析参数列表并生成函数描述
             function_info = {
@@ -48,8 +45,8 @@ class FunctionManager:
                 "parameters": {
                     "type": "object",
                     "properties": {},
-                    "required": []  # Add a required field
-                }
+                    "required": [],  # Add a required field
+                },
             }
 
             for parameter_name, parameter in parameters.items():
@@ -61,8 +58,7 @@ class FunctionManager:
                 # 如果注解是一个类型，获取它的名字
                 # 如果注解是一个字符串，直接使用它
                 if isinstance(parameter_annotation, type):
-                    parameter_annotation_name = parameter_annotation.__name__.lower(
-                    )
+                    parameter_annotation_name = parameter_annotation.__name__.lower()
                 else:
                     parameter_annotation_name = parameter_annotation.lower()
 
@@ -73,24 +69,23 @@ class FunctionManager:
                     for line in docstring_lines
                 ]
                 param_description = next(
-                    (match.group(1)
-                     for match in param_description_match if match), '')
+                    (match.group(1) for match in param_description_match if match), ""
+                )
 
                 # 添加参数描述
                 parameter_description = {
-                    "type":
-                    type_mapping.get(parameter_annotation_name,
-                                     parameter_annotation_name),
-                    "description":
-                    param_description
+                    "type": type_mapping.get(
+                        parameter_annotation_name, parameter_annotation_name
+                    ),
+                    "description": param_description,
                 }
                 function_info["parameters"]["properties"][
-                    parameter_name] = parameter_description
+                    parameter_name
+                ] = parameter_description
 
                 # If the parameter has no default value, add it to the required field.
                 if parameter.default == inspect.Parameter.empty:
-                    function_info["parameters"]["required"].append(
-                        parameter_name)
+                    function_info["parameters"]["required"].append(parameter_name)
 
             functions_array.append(function_info)
 
@@ -131,9 +126,8 @@ def get_html(url: str):
         url: The url of the website. (required)
     """
     headers = {
-        'User-Agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
-        'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
     }
     # 发送请求
     response = requests.get(url, headers=headers)
@@ -141,28 +135,11 @@ def get_html(url: str):
     return response.text
 
 
-def search_by_bard(content: str):
-    """
-    Search the content(translate to English language) by bard.if the input content that you don't know how to say, you can use this function.
-    Parameters:
-        content: The content to search.please change the content language to English.(required)
-    """
-    print(content)
-    response = openai.ChatCompletion.create(model="bard",
-                                            messages=[{
-                                                'role': 'user',
-                                                'content': content
-                                            }],
-                                            stream=False,
-                                            temperature=0)
-    print(response)
-    return {'content': response['choices'][0]['message']['content']}
-
-
 if __name__ == "__main__":
-    function_manager = FunctionManager(functions=[search_by_bard])
-    functions_array = function_manager.generate_functions_array()
-    print(functions_array)
+    pass
+    # function_manager = FunctionManager(functions=[search_by_bard])
+    # functions_array = function_manager.generate_functions_array()
+    # print(functions_array)
 
     # result = function_manager.call_function('get_current_weather', {'location': 'San Francisco, CA', 'unit': 'celsius'})
     # print(result)

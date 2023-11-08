@@ -1,4 +1,4 @@
-import openai
+from openai import AsyncClient
 import json
 import ast
 import os
@@ -9,10 +9,10 @@ import os
 import tiktoken
 import importlib
 import json
-from chainlit import user_session
 
-openai.api_key = os.environ.get("OPENAI_API_KEY")
-openai.api_base = os.environ.get("OPENAI_API_BASE")
+
+openai_client = AsyncClient(api_key=os.environ.get("OPENAI_API_KEY"))
+
 
 # 获取plugins目录下所有的子目录，忽略名为'__pycache__'的目录
 plugin_dirs = [
@@ -94,9 +94,6 @@ MAX_ITER = 100
 
 
 async def on_message(message: cl.Message):
-    print("==================================")
-    print(message)
-    print("==================================")
     user_message = message.content
     message_history = cl.user_session.get("message_history")
     message_history.append({"role": "user", "content": user_message})
@@ -111,15 +108,16 @@ async def on_message(message: cl.Message):
         stream_resp = None
         send_message = __truncate_conversation(message_history)
         try:
-            async for stream_resp in await openai.ChatCompletion.acreate(
+            stream = openai_client.chat.completions.create(
                 model="gpt-4",
                 messages=send_message,
                 stream=True,
                 function_call="auto",
                 functions=function_manager.generate_functions_array(),
                 temperature=0,
-            ):  # type: ignore
-                new_delta = stream_resp.choices[0]["delta"]
+            )
+            async for part in stream:
+                new_delta = part.choices[0].delta
                 (
                     openai_message,
                     content_ui_message,
@@ -178,35 +176,31 @@ async def on_message(message: cl.Message):
 async def process_new_delta(
     new_delta, openai_message, content_ui_message, function_ui_message
 ):
-    if "role" in new_delta:
-        openai_message["role"] = new_delta["role"]
-    if "content" in new_delta:
-        new_content = new_delta.get("content") or ""
-        openai_message["content"] += new_content
-        await content_ui_message.stream_token(new_content)
-    if "function_call" in new_delta:
-        if "name" in new_delta["function_call"]:
-            openai_message["function_call"] = {
-                "name": new_delta["function_call"]["name"]
-            }
+    if new_delta.role:
+        openai_message["role"] = new_delta.role
+
+    new_content = new_delta.content or ""
+    openai_message["content"] += new_content
+    await content_ui_message.stream_token(new_content)
+    if new_delta.function_call:
+        if new_delta.function_call.name:
+            openai_message["function_call"] = {"name": new_delta.function_call.name}
             await content_ui_message.send()
             function_ui_message = cl.Message(
-                author=new_delta["function_call"]["name"],
+                author=new_delta.function_call.name,
                 content="",
                 parent_id=content_ui_message.id,
                 language="json",
             )
-            await function_ui_message.stream_token(new_delta["function_call"]["name"])
+            await function_ui_message.stream_token(new_delta.function_call.name)
 
-        if "arguments" in new_delta["function_call"]:
+        if new_delta.function_call.arguments:
             if "arguments" not in openai_message["function_call"]:
                 openai_message["function_call"]["arguments"] = ""
-            openai_message["function_call"]["arguments"] += new_delta["function_call"][
+            openai_message["function_call"][
                 "arguments"
-            ]
-            await function_ui_message.stream_token(
-                new_delta["function_call"]["arguments"]
-            )
+            ] += new_delta.function_call.arguments
+            await function_ui_message.stream_token(new_delta.function_call.arguments)
     return openai_message, content_ui_message, function_ui_message
 
 

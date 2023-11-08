@@ -1,9 +1,11 @@
-import openai
 import os
 import chainlit as cl
 import asyncio
 
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+from openai import AsyncClient
+
+openai_client = AsyncClient(api_key=os.environ.get("OPENAI_API_KEY"))
+
 
 model_name = "gpt-3.5-turbo"
 settings = {
@@ -40,14 +42,15 @@ async def answer_as(name):
     message_history = cl.user_session.get("message_history")
     msg = cl.Message(author=name, content="")
 
-    async for stream_resp in await openai.ChatCompletion.acreate(
+    stream = await openai_client.chat.completions.create(
         model=model_name,
         messages=message_history + [{"role": "user", "content": f"speak as {name}"}],
         stream=True,
         **settings,
-    ):
-        token = stream_resp.choices[0]["delta"].get("content", "")
-        await msg.stream_token(token)
+    )
+    async for part in stream:
+        if token := part.choices[0].delta.content or "":
+            await msg.stream_token(token)
 
     # Need to add the information that it was the author who answered but OpenAI only allows assistant.
     # simplified for the purpose of the demo.

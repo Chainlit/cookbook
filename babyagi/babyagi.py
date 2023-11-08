@@ -4,17 +4,17 @@ import time
 import logging
 from collections import deque
 from typing import Dict, List
-import openai
 import chromadb
 import tiktoken as tiktoken
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import re
+import openai
+from openai import Client
 import chainlit as cl
 
 # default opt out of chromadb telemetry.
 from chromadb.config import Settings
 
-client = chromadb.Client(Settings(anonymized_telemetry=False))
 
 # Engine configuration
 
@@ -79,7 +79,7 @@ print(f"{OBJECTIVE}")
 print("\033[93m\033[1m" + "\nInitial task:" + "\033[0m\033[0m" + f" {INITIAL_TASK}")
 
 # Configure OpenAI
-openai.api_key = OPENAI_API_KEY
+openai_client = Client(api_key=OPENAI_API_KEY)
 
 
 async def main():
@@ -89,12 +89,7 @@ async def main():
             logging.getLogger("chromadb").setLevel(logging.ERROR)
             # Create Chroma collection
             chroma_persist_dir = "chroma"
-            chroma_client = chromadb.Client(
-                settings=chromadb.config.Settings(
-                    chroma_db_impl="duckdb+parquet",
-                    persist_directory=chroma_persist_dir,
-                )
-            )
+            chroma_client = chromadb.PersistentClient(path=chroma_persist_dir)
 
             metric = "cosine"
             embedding_function = OpenAIEmbeddingFunction(api_key=OPENAI_API_KEY)
@@ -189,7 +184,7 @@ async def main():
             try:
                 if not model.lower().startswith("gpt-"):
                     # Use completion API
-                    response = openai.Completion.create(
+                    response = openai_client.completions.create(
                         engine=model,
                         prompt=prompt,
                         temperature=temperature,
@@ -209,7 +204,7 @@ async def main():
 
                     # Use chat completion API
                     messages = [{"role": "system", "content": trimmed_prompt}]
-                    response = openai.ChatCompletion.create(
+                    response = openai_client.chat.completions.create(
                         model=model,
                         messages=messages,
                         temperature=temperature,
@@ -218,34 +213,29 @@ async def main():
                         stop=None,
                     )
                     return response.choices[0].message.content.strip()
-            except openai.error.RateLimitError:
+            except openai.RateLimitError:
                 print(
                     "   *** The OpenAI API rate limit has been exceeded. Waiting 10 seconds and trying again. ***"
                 )
                 time.sleep(10)  # Wait 10 seconds and try again
-            except openai.error.Timeout:
+            except openai.APITimeoutError:
                 print(
                     "   *** OpenAI API timeout occurred. Waiting 10 seconds and trying again. ***"
                 )
                 time.sleep(10)  # Wait 10 seconds and try again
-            except openai.error.APIError:
+            except openai.APIError:
                 print(
                     "   *** OpenAI API error occurred. Waiting 10 seconds and trying again. ***"
                 )
                 time.sleep(10)  # Wait 10 seconds and try again
-            except openai.error.APIConnectionError:
+            except openai.APIConnectionError:
                 print(
                     "   *** OpenAI API connection error occurred. Check your network settings, proxy configuration, SSL certificates, or firewall rules. Waiting 10 seconds and trying again. ***"
                 )
                 time.sleep(10)  # Wait 10 seconds and try again
-            except openai.error.InvalidRequestError:
+            except openai.BadRequestError:
                 print(
                     "   *** OpenAI API invalid request. Check the documentation for the specific API method you are calling and make sure you are sending valid and complete parameters. Waiting 10 seconds and trying again. ***"
-                )
-                time.sleep(10)  # Wait 10 seconds and try again
-            except openai.error.ServiceUnavailableError:
-                print(
-                    "   *** OpenAI API service unavailable. Waiting 10 seconds and trying again. ***"
                 )
                 time.sleep(10)  # Wait 10 seconds and try again
             else:

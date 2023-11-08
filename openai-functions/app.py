@@ -1,10 +1,10 @@
-import openai
 import json
 import ast
 import os
+from openai import AsyncOpenAI
+
 import chainlit as cl
-from openai import OpenAI, AsyncOpenAI
-from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageToolCall
+from chainlit.prompt import Prompt, PromptMessage
 
 api_key = os.environ.get("OPENAI_API_KEY")
 client = AsyncOpenAI(api_key=api_key)
@@ -44,7 +44,7 @@ tools = [
                 },
                 "required": ["location"],
             },
-        }
+        },
     }
 ]
 
@@ -65,30 +65,42 @@ async def run_conversation(message: cl.Message):
     cur_iter = 0
 
     while cur_iter < MAX_ITER:
-        response = await client.chat.completions.create(
-            model="gpt-4",
-            messages=message_history,
-            tools=tools,
-            tool_choice="auto",
+        settings = {
+            "model": "gpt-4",
+            "tools": tools,
+            "tool_choice": "auto",
+        }
+
+        prompt = Prompt(
+            provider="openai-chat",
+            messages=[
+                PromptMessage(
+                    formatted=m["content"], name=m.get("name"), role=m["role"]
+                )
+                for m in message_history
+            ],
+            settings=settings,
         )
-        print(response)
+
+        response = await client.chat.completions.create(
+            messages=message_history, **settings
+        )
+
         message = response.choices[0].message
+
+        prompt.completion = message.content or ""
+
         root_msg_id = await cl.Message(
-            author=message.role, content=message.content or ""
+            prompt=prompt, author=message.role, content=prompt.completion
         ).send()
-        
-        message_history.append(message)
 
         if not message.tool_calls:
             break
 
         for tool_call in message.tool_calls:
-
             if tool_call.type == "function":
                 function_name = tool_call.function.name
-                arguments = ast.literal_eval(
-                    tool_call.function.arguments)
-
+                arguments = ast.literal_eval(tool_call.function.arguments)
                 await cl.Message(
                     author=function_name,
                     content=str(tool_call.function),
@@ -103,10 +115,10 @@ async def run_conversation(message: cl.Message):
 
                 message_history.append(
                     {
-                        "role": "tool",
+                        "role": "function",
                         "name": function_name,
                         "content": function_response,
-                        "tool_call_id": tool_call.id
+                        "tool_call_id": tool_call.id,
                     }
                 )
 
