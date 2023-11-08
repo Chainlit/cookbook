@@ -12,6 +12,7 @@ assistant_id = os.environ.get("ASSISTANT_ID")
 async def start_chat():
     thread = await client.beta.threads.create()
     cl.user_session.set("thread", thread)
+    await cl.Message(author="assistant", content="Ask me math questions!").send()
 
 
 @cl.on_message
