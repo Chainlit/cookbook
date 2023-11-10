@@ -3,8 +3,7 @@ Tags: [openai, assistant-api]
 
 # OpenAI Assitant API with Chainlit!
 
-
-https://github.com/Chainlit/cookbook/assets/13104895/1a81490f-b012-41c5-975f-e7d69344472b
+https://github.com/Chainlit/cookbook/assets/13104895/8a56c03f-ca04-4d64-b8a7-72498b4e274f
 
 - Create an assistant 
 - Run the assistant
