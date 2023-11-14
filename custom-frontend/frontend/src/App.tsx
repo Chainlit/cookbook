@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import "./App.css";
 import { useChatSession } from "@chainlit/components";
-import MessagePlayground from "./playground";
+import MessagePlayground from "./Playground";
 
 const CHAINLIT_SERVER = "http://localhost:8000";
 const userEnv = {};
