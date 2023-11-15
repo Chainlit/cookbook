@@ -1,4 +1,5 @@
 import os
+import json
 from typing import Dict
 
 from openai import AsyncOpenAI
@@ -147,6 +148,21 @@ async def run_conversation(message_from_ui: cl.Message):
                                 parent_id=context.session.root_message.id,
                             )
                             await message_references[tool_call.id].send()
+                    elif tool_call.type == "function":
+                        function_name = tool_call.function.name
+                        function_args = json.loads(tool_call.function.arguments)
+
+                        if not tool_call.id in message_references:
+                            message_references[tool_call.id] = cl.Message(
+                                author=function_name,
+                                content=function_args,
+                                language="json",
+                                parent_id=context.session.root_message.id,
+                            )
+                            await message_references[tool_call.id].send()
+                        raise NotImplementedError(
+                            "Implement your function call here and send the response to the assistant"
+                        )
 
         await cl.sleep(1)  # Refresh every second
 
