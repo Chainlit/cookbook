@@ -160,9 +160,19 @@ async def run_conversation(message_from_ui: cl.Message):
                                 parent_id=context.session.root_message.id,
                             )
                             await message_references[tool_call.id].send()
-                        raise NotImplementedError(
-                            "Implement your function call here and send the response to the assistant"
-                        )
+
+                            output = "22C"  # Actually call your function here
+
+                            await client.beta.threads.runs.submit_tool_outputs(
+                                thread_id=thread.id,
+                                run_id=run.id,
+                                tool_outputs=[
+                                    {
+                                        "tool_call_id": tool_call.id,
+                                        "output": output,
+                                    },
+                                ],
+                            )
 
         await cl.sleep(1)  # Refresh every second
 
