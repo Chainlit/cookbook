@@ -1,136 +1,99 @@
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
-from langchain.chains import RetrievalQAWithSourcesChain
+from typing import List
+from pathlib import Path
+
+from langchain.embeddings import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    SystemMessagePromptTemplate,
-    HumanMessagePromptTemplate,
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema import StrOutputParser
+from langchain.document_loaders import (
+    PyMuPDFLoader,
 )
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores.chroma import Chroma
+from langchain.indexes import SQLRecordManager, index
+from langchain.schema import Document
+from langchain.schema.runnable import Runnable, RunnablePassthrough, RunnableConfig
+
 import chainlit as cl
 
 
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+chunk_size = 1024
+chunk_overlap = 50
 
-system_template = """Use the following pieces of context to answer the users question.
-If you don't know the answer, just say that you don't know, don't try to make up an answer.
-ALWAYS return a "SOURCES" part in your answer.
-The "SOURCES" part should be a reference to the source of the document from which you got your answer.
+embeddings_model = OpenAIEmbeddings()
 
-Example of your response should be:
+PDF_STORAGE_PATH = "./pdfs"
 
-```
-The answer is foo
-SOURCES: xyz
-```
 
-Begin!
-----------------
-{summaries}"""
-messages = [
-    SystemMessagePromptTemplate.from_template(system_template),
-    HumanMessagePromptTemplate.from_template("{question}"),
-]
-prompt = ChatPromptTemplate.from_messages(messages)
-chain_type_kwargs = {"prompt": prompt}
+def process_pdfs(pdf_storage_path: str):
+    pdf_directory = Path(pdf_storage_path)
+    docs = []  # type: List[Document]
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+
+    for pdf_path in pdf_directory.glob("*.pdf"):
+        loader = PyMuPDFLoader(str(pdf_path))
+        documents = loader.load()
+        docs += text_splitter.split_documents(documents)
+
+    doc_search = Chroma.from_documents(docs, embeddings_model)
+
+    namespace = "chromadb/my_documents"
+    record_manager = SQLRecordManager(
+        namespace, db_url="sqlite:///record_manager_cache.sql"
+    )
+    record_manager.create_schema()
+
+    index_result = index(
+        docs,
+        record_manager,
+        doc_search,
+        cleanup="incremental",
+        source_id_key="source",
+    )
+
+    return doc_search
+
+
+doc_search = process_pdfs(PDF_STORAGE_PATH)
+model = ChatOpenAI(model_name="gpt-4", streaming=True)
 
 
 @cl.on_chat_start
-async def init():
-    files = None
+async def on_chat_start():
+    template = """Answer the question based only on the following context:
 
-    # Wait for the user to upload a file
-    while files == None:
-        files = await cl.AskFileMessage(
-            content="Please upload a text file to begin!",
-            accept=["text/plain"],
-            disable_human_feedback=True,
-        ).send()
+    {context}
 
-    file = files[0]
+    Question: {question}
+    """
+    prompt = ChatPromptTemplate.from_template(template)
 
-    msg = cl.Message(
-        content=f"Processing `{file.name}`...",
-        disable_human_feedback=True,
-    )
-    await msg.send()
+    def format_docs(docs):
+        return "\n\n".join([d.page_content for d in docs])
 
-    # Decode the file
-    text = file.content.decode("utf-8")
+    retriever = doc_search.as_retriever()
 
-    # Split the text into chunks
-    texts = text_splitter.split_text(text)
-
-    # Create a metadata for each chunk
-    metadatas = [{"source": f"{i}-pl"} for i in range(len(texts))]
-
-    # Create a Chroma vector store
-    embeddings = OpenAIEmbeddings()
-    docsearch = await cl.make_async(Chroma.from_texts)(
-        texts, embeddings, metadatas=metadatas
-    )
-    # Create a chain that uses the Chroma vector store
-    chain = RetrievalQAWithSourcesChain.from_chain_type(
-        ChatOpenAI(temperature=0, streaming=True),
-        chain_type="stuff",
-        retriever=docsearch.as_retriever(),
-        chain_type_kwargs=chain_type_kwargs,
+    runnable = (
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | model
+        | StrOutputParser()
     )
 
-    # Save the metadata and texts in the user session
-    cl.user_session.set("metadatas", metadatas)
-    cl.user_session.set("texts", texts)
-
-    # Let the user know that the system is ready
-    msg.content = f"Processing `{file.name}` done. You can now ask questions!"
-    await msg.update()
-
-    cl.user_session.set("chain", chain)
+    cl.user_session.set("runnable", runnable)
 
 
 @cl.on_message
-async def main(message: cl.Message):
-    chain = cl.user_session.get("chain")  # type: RetrievalQAWithSourcesChain
-    cb = cl.AsyncLangchainCallbackHandler(
-        stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
-    )
-    cb.answer_reached = True
-    res = await chain.acall(message.content, callbacks=[cb])
+async def on_message(message: cl.Message):
+    runnable = cl.user_session.get("runnable")  # type: Runnable
 
-    answer = res["answer"]
-    sources = res["sources"].strip()
-    source_elements = []
+    msg = cl.Message(content="")
+    await msg.send()
 
-    # Get the metadata and texts from the user session
-    metadatas = cl.user_session.get("metadatas")
-    all_sources = [m["source"] for m in metadatas]
-    texts = cl.user_session.get("texts")
+    async for chunk in runnable.astream(
+        message.content,
+        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
+    ):
+        await msg.stream_token(chunk)
 
-    if sources:
-        found_sources = []
-
-        # Add the sources to the message
-        for source in sources.split(","):
-            source_name = source.strip().replace(".", "")
-            # Get the index of the source
-            try:
-                index = all_sources.index(source_name)
-            except ValueError:
-                continue
-            text = texts[index]
-            found_sources.append(source_name)
-            # Create the text element referenced in the message
-            source_elements.append(cl.Text(content=text, name=source_name))
-
-        if found_sources:
-            answer += f"\nSources: {', '.join(found_sources)}"
-        else:
-            answer += "\nNo sources found"
-
-    if cb.has_streamed_final_answer:
-        cb.final_stream.elements = source_elements
-        cb.final_stream.content = answer
-        await cb.final_stream.update()
-    else:
-        await cl.Message(content=answer, elements=source_elements).send()
+    await msg.update()
