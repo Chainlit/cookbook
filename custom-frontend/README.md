@@ -1,6 +1,6 @@
 # Custom frontend with Chainlit!
 
-The Chainlit websocket client is available in the [@chainlit/components](https://www.npmjs.com/package/@chainlit/components) npm package.
+The Chainlit websocket client is available in the [@chainlit/react-client](https://www.npmjs.com/package/@chainlit/react-client) npm package.
 
 ## Install Chainlit
 
