@@ -10,7 +10,7 @@ from openai.types.beta.threads import (
 )
 import chainlit as cl
 from chainlit.context import context
-from create_assistant import tools
+from create_assistant import tool_map
 
 api_key = os.environ.get("OPENAI_API_KEY")
 client = AsyncOpenAI(api_key=api_key)
@@ -178,7 +178,7 @@ async def run_conversation(message_from_ui: cl.Message):
                             await message_references[tool_call.id].send()
                             
                     elif tool_call.type == "function":
-                        tool_map = {tool.name: tool for tool in tools if hasattr(tool, "name")}
+            
                         function_name = tool_call.function.name
                         function_args = json.loads(tool_call.function.arguments)
 
@@ -191,7 +191,7 @@ async def run_conversation(message_from_ui: cl.Message):
                             )
                             await message_references[tool_call.id].send()
 
-                            tool_output = tool_map[function_name].invoke(json.loads(tool_call.function.arguments)["__arg1"])
+                            tool_output = tool_map[function_name](json.loads(tool_call.function.arguments))
                             print("ARGUEMENTSSSSS", tool_call.function.arguments)
                             print(function_name, function_args, tool_output, end="\n\n")
                             tool_outputs.append(
