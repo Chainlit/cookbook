@@ -116,15 +116,9 @@ async def run_conversation(message_from_ui: cl.Message):
                 await process_thread_message(message_references, thread_message)
 
             if step_details.type == "tool_calls":
-                print("TOOL CALLS", step_details)
                 for tool_call in step_details.tool_calls:
-                    # print("NOW DICT", tool_call)
                     if isinstance(tool_call, dict):
                         tool_call = DictToObject(tool_call)
-                        print("NOW IT WAS A DICT",tool_call)
-                    else:
-                        print("NOw IT WAS AN OBJ", tool_call)
-                        print(tool_call.type)
                         
                     if tool_call.type == "code_interpreter":
                         if not tool_call.id in message_references:
@@ -166,7 +160,6 @@ async def run_conversation(message_from_ui: cl.Message):
                                     "tool_call_id": tool_call.id,
                                 }
                             )
-                        print("TOOL code OUTPUTS", tool_outputs)    
                         
                     elif tool_call.type == "retrieval":
                         if not tool_call.id in message_references:
@@ -191,14 +184,11 @@ async def run_conversation(message_from_ui: cl.Message):
                             )
                             await message_references[tool_call.id].send()
 
-                            tool_output = tool_map[function_name](json.loads(tool_call.function.arguments))
-                            print("ARGUEMENTSSSSS", tool_call.function.arguments)
-                            print(function_name, function_args, tool_output, end="\n\n")
+                            tool_output = tool_map[function_name](**json.loads(tool_call.function.arguments))
                             tool_outputs.append(
                                 {"output": tool_output, "tool_call_id": tool_call.id}
                             )
             if run.status == "requires_action" and run.required_action.type == "submit_tool_outputs":
-                print("TOOL OUTPUTS", tool_outputs)
                 await client.beta.threads.runs.submit_tool_outputs(
                     thread_id=thread.id,
                     run_id=run.id,

@@ -63,18 +63,13 @@ tools = [
 ]
 
 
-def get_current_weather(input: dict):
-    # return dummy_weather
-    location = input.get("location")
-    format = input.get("format")
+def get_current_weather(location: str, format: str):
+    # return dummy weather
     return "The current weather in {} is {} degrees {}".format(location, 20, format)
 
 
-def get_n_day_weather_forecast(input: dict):
-    # return dummy_weather
-    num_days = input.get("num_days")
-    location = input.get("location")
-    format = input.get("format")
+def get_n_day_weather_forecast(location: str, format: str, num_days: int):
+    # return dummy weather
     return "The weather forecast for the next {} days in {} is {} degrees {}".format(num_days, location, 20, format)
 
 
