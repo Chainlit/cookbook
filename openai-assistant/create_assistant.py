@@ -94,7 +94,6 @@ Given a formula below $$ s = ut + \frac{1}{2}at^{2} $$ Calculate the value of $s
         tools=tools,
         model="gpt-4-1106-preview",
     )
-    print("langchain assistant created", assistant.id)
     assistant_name = "searchistant"
     # append key vallue pair to assistants.json
 
