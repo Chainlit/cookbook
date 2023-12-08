@@ -1,6 +1,7 @@
-from langchain.llms import HuggingFacePipeline
+from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from transformers import AutoTokenizer, TextStreamer
-from langchain import PromptTemplate, LLMChain
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 import transformers
 import torch
 

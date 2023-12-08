@@ -1,78 +1,48 @@
-from openai import AsyncClient
 import json
 import ast
 import os
-import chainlit as cl
-from chainlit.prompt import Prompt, PromptMessage
+from openai import AsyncOpenAI
 
-openai_client = AsyncClient(api_key=os.environ.get("OPENAI_API_KEY"))
+import chainlit as cl
+from chainlit.playground.providers.openai import stringify_function_call
+
+api_key = os.environ.get("OPENAI_API_KEY")
+client = AsyncOpenAI(api_key=api_key)
 
 MAX_ITER = 5
 
 
-# Example dummy function hard coded to return the same weather
-# In production, this could be your backend API or an external API
 def get_current_weather(location, unit):
-    """Get the current weather in a given location"""
-    unit = unit or "Farenheit"
+    unit = unit or "Fahrenheit"
     weather_info = {
         "location": location,
         "temperature": "60",
         "unit": unit,
         "forecast": ["windy"],
     }
-
     return json.dumps(weather_info)
 
 
-functions = [
+tools = [
     {
-        "name": "get_current_weather",
-        "description": "Get the current weather in a given location",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "location": {
-                    "type": "string",
-                    "description": "The city and state, e.g. San Francisco, CA",
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "description": "Get the current weather in a given location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA",
+                    },
+                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
                 },
-                "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                "required": ["location"],
             },
-            "required": ["location"],
         },
     }
 ]
-
-
-async def process_new_delta(
-    new_delta, openai_message, content_ui_message, function_ui_message
-):
-    if new_delta.role:
-        openai_message["role"] = new_delta.role
-
-    new_content = new_delta.content or ""
-    openai_message["content"] += new_content
-    await content_ui_message.stream_token(new_content)
-    if new_delta.function_call:
-        if new_delta.function_call.name:
-            openai_message["function_call"] = {"name": new_delta.function_call.name}
-            await content_ui_message.send()
-            function_ui_message = cl.Message(
-                author=new_delta.function_call.name,
-                content="",
-                parent_id=content_ui_message.id,
-                language="json",
-            )
-            await function_ui_message.stream_token(new_delta.function_call.name)
-
-        if new_delta.function_call.arguments:
-            if "arguments" not in openai_message["function_call"]:
-                openai_message["function_call"]["arguments"] = ""
-            openai_message["function_call"][
-                "arguments"
-            ] += new_delta.function_call.arguments
-            await function_ui_message.stream_token(new_delta.function_call.arguments)
-    return openai_message, content_ui_message, function_ui_message
 
 
 @cl.on_chat_start
@@ -83,93 +53,110 @@ def start_chat():
     )
 
 
+@cl.step(type="TOOL")
+async def call_tool(tool_call_id, name, arguments, message_history):
+    arguments = ast.literal_eval(arguments)
+
+    current_step = cl.context.current_step
+    current_step.name = name
+    current_step.input = arguments
+
+    function_response = get_current_weather(
+        location=arguments.get("location"),
+        unit=arguments.get("unit"),
+    )
+
+    current_step.output = function_response
+    current_step.language = "json"
+
+    message_history.append(
+        {
+            "role": "function",
+            "name": name,
+            "content": function_response,
+            "tool_call_id": tool_call_id,
+        }
+    )
+
+
+@cl.step(type="LLM")
+async def call_gpt4(message_history):
+    settings = {
+        "model": "gpt-3.5-turbo",
+        "tools": tools,
+        "tool_choice": "auto",
+        "temperature": 0,
+    }
+
+    cl.context.current_step.generation = cl.ChatGeneration(
+        provider="openai-chat",
+        messages=[
+            cl.GenerationMessage(
+                formatted=m["content"], name=m.get("name"), role=m["role"]
+            )
+            for m in message_history
+        ],
+        settings=settings,
+    )
+
+    stream = await client.chat.completions.create(
+        messages=message_history, stream=True, **settings
+    )
+
+    tool_call_id = None
+    function_output = {"name": "", "arguments": ""}
+
+    final_answer = cl.Message(content="", author="Answer")
+
+    async for part in stream:
+        new_delta = part.choices[0].delta
+        tool_call = new_delta.tool_calls and new_delta.tool_calls[0]
+        function = tool_call and tool_call.function
+        if tool_call and tool_call.id:
+            tool_call_id = tool_call.id
+
+        if function:
+            if function.name:
+                function_output["name"] = function.name
+            else:
+                function_output["arguments"] += function.arguments
+            await cl.context.current_step.stream_token(
+                json.dumps(function_output), is_sequence=True
+            )
+        if new_delta.content:
+            await cl.context.current_step.stream_token(new_delta.content)
+            if not final_answer.content:
+                await final_answer.send()
+            await final_answer.stream_token(new_delta.content)
+
+    cl.context.current_step.generation.completion = cl.context.current_step.output
+
+    if tool_call_id:
+        cl.context.current_step.output = stringify_function_call(function_output)
+        cl.context.current_step.language = "json"
+        await call_tool(
+            tool_call_id,
+            function_output["name"],
+            function_output["arguments"],
+            message_history,
+        )
+
+    if final_answer.content:
+        await final_answer.update()
+
+    return tool_call_id
+
+
 @cl.on_message
-async def run_conversation(message: cl.Message):
+async def on_message(message: cl.Message):
     message_history = cl.user_session.get("message_history")
     message_history.append({"role": "user", "content": message.content})
 
     cur_iter = 0
 
     while cur_iter < MAX_ITER:
-        # OpenAI call
-        openai_message = {"role": "", "content": ""}
-        function_ui_message = None
-        content_ui_message = cl.Message(content="")
-
-        await content_ui_message.send()
-
-        settings = {
-            "model": "gpt-3.5-turbo",
-            "function_call": "auto",
-            "functions": functions,
-            "temperature": 0,
-        }
-
-        stream = await openai_client.chat.completions.create(
-            messages=message_history, stream=True, **settings
-        )
-
-        finish_reason = None
-
-        async for part in stream:
-            new_delta = part.choices[0].delta
-            (
-                openai_message,
-                content_ui_message,
-                function_ui_message,
-            ) = await process_new_delta(
-                new_delta, openai_message, content_ui_message, function_ui_message
-            )
-            finish_reason = part.choices[0].finish_reason
-
-        prompt = Prompt(
-            provider="openai-chat",
-            messages=[
-                PromptMessage(
-                    formatted=m["content"], name=m.get("name"), role=m["role"]
-                )
-                for m in message_history
-            ],
-            settings=settings,
-            completion=content_ui_message.content,
-        )
-        content_ui_message.prompt = prompt
-        await content_ui_message.update()
-
-        message_history.append(openai_message)
-        if function_ui_message is not None:
-            await function_ui_message.send()
-
-        if finish_reason == "stop":
+        tool_call_id = await call_gpt4(message_history)
+        if not tool_call_id:
             break
-
-        elif finish_reason != "function_call":
-            raise ValueError(finish_reason)
-
-        # if code arrives here, it means there is a function call
-        function_name = openai_message.get("function_call", {}).get("name")
-        arguments = ast.literal_eval(
-            openai_message.get("function_call", {}).get("arguments")
-        )
-
-        function_response = get_current_weather(
-            location=arguments.get("location"),
-            unit=arguments.get("unit"),
-        )
-
-        message_history.append(
-            {
-                "role": "function",
-                "name": function_name,
-                "content": function_response,
-            }
-        )
-
-        await cl.Message(
-            author=function_name,
-            content=str(function_response),
-            language="json",
-            parent_id=content_ui_message.id,
-        ).send()
 
         cur_iter += 1

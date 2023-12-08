@@ -4,27 +4,12 @@ from openai import AsyncOpenAI
 from google.cloud import bigquery
 
 import chainlit as cl
-from chainlit.prompt import Prompt, PromptMessage
 from chainlit.playground.providers.openai import ChatOpenAI
 
 # Set up BigQuery client
 client = bigquery.Client(location="EU")
 
 openai_client = AsyncOpenAI()
-
-
-def execute_query(query):
-    # Execute the SQL query
-    query_job = client.query(query)
-
-    # Wait for the query to complete
-    query_job.result()
-
-    # Get the query results
-    results = query_job.to_dataframe()
-    markdown_table = results.to_markdown(index=False)
-
-    return markdown_table
 
 
 settings = {"model": "gpt-3.5-turbo", "temperature": 0, "stop": ["```"]}
@@ -51,55 +36,62 @@ Short and concise analysis:
 """
 
 
-async def build_query(message: cl.Message):
-    # Create the prompt object
-    prompt = Prompt(
+@cl.step(type="LLM")
+async def gen_query(human_query: str):
+    current_step = cl.context.current_step
+    current_step.generation = cl.ChatGeneration(
         provider=ChatOpenAI.id,
         messages=[
-            PromptMessage(
+            cl.GenerationMessage(
                 role="user",
                 template=sql_query_prompt,
-                formatted=sql_query_prompt.format(input=message.content),
+                formatted=sql_query_prompt.format(input=human_query),
             )
         ],
         settings=settings,
-        inputs={"input": message.content},
+        inputs={"input": human_query},
     )
-
-    # Prepare the message for streaming
-    msg = cl.Message(content="", author="query", language="sql", parent_id=message.id)
-    await msg.send()
 
     # Call OpenAI and stream the message
     stream_resp = await openai_client.chat.completions.create(
-        messages=[m.to_openai() for m in prompt.messages], stream=True, **settings
+        messages=[m.to_openai() for m in current_step.generation.messages],
+        stream=True,
+        **settings
     )
     async for part in stream_resp:
         token = part.choices[0].delta.content or ""
         if token:
-            await msg.stream_token(token)
+            await current_step.stream_token(token)
 
-    # Update the prompt object with the completion
-    prompt.completion = msg.content
-    msg.prompt = prompt
+    current_step.language = "sql"
+    current_step.generation.completion = current_step.output
 
-    # Send and close the message stream
-    await msg.update()
-
-    return msg.content
+    return current_step.output
 
 
-async def run_and_analyze(parent_id: str, query: str):
-    table = execute_query(query=query)
+@cl.step
+async def execute_query(query):
+    # Execute the SQL query
+    query_job = client.query(query)
 
-    await cl.Message(content=table, parent_id=parent_id, author="result").send()
+    # Wait for the query to complete
+    query_job.result()
 
-    # Create the prompt object
+    # Get the query results
+    results = query_job.to_dataframe()
+    markdown_table = results.to_markdown(index=False)
+
+    return markdown_table
+
+
+@cl.step(type="LLM")
+async def analyze(table):
+    current_step = cl.context.current_step
     today = str(date.today())
-    prompt = Prompt(
+    current_step.generation = cl.ChatGeneration(
         provider=ChatOpenAI.id,
         messages=[
-            PromptMessage(
+            cl.GenerationMessage(
                 role="user",
                 template=explain_query_result_prompt,
                 formatted=explain_query_result_prompt.format(date=today, table=table),
@@ -109,40 +101,47 @@ async def run_and_analyze(parent_id: str, query: str):
         inputs={"date": today, "table": table},
     )
 
-    # Prepare the message for streaming
-    msg = cl.Message(
-        content="",
-    )
-    await msg.send()
+    final_answer = cl.Message(content="")
+    await final_answer.send()
 
     # Call OpenAI and stream the message
     stream = await openai_client.chat.completions.create(
-        messages=[m.to_openai() for m in prompt.messages], stream=True, **settings
+        messages=[m.to_openai() for m in current_step.generation.messages],
+        stream=True,
+        **settings
     )
     async for part in stream:
         token = part.choices[0].delta.content or ""
         if token:
-            await msg.stream_token(token)
+            await final_answer.stream_token(token)
 
-    # Update the prompt object with the completion
-    prompt.completion = msg.content
-    msg.prompt = prompt
+    final_answer.actions = [
+        cl.Action(name="take_action", value="action", label="Take action")
+    ]
+    await final_answer.update()
 
-    msg.actions = [cl.Action(name="take_action", value="action", label="Take action")]
+    current_step.output = final_answer.content
+    current_step.generation.completion = final_answer.content
 
-    # Send and close the message stream
-    await msg.update()
+    return current_step.output
+
+
+@cl.step(type="RUN")
+async def chain(human_query: str):
+    sql_query = await gen_query(human_query)
+    table = await execute_query(sql_query)
+    analysis = await analyze(table)
+    return analysis
+
+
+@cl.on_message
+async def main(message: cl.Message):
+    await chain(message.content)
 
 
 @cl.action_callback(name="take_action")
 async def take_action(action: cl.Action):
     await cl.Message(content="Contacting shipping carrier...").send()
-
-
-@cl.on_message
-async def main(message: cl.Message):
-    query = await build_query(message)
-    await run_and_analyze(message.id, query)
 
 
 @cl.oauth_callback

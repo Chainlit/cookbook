@@ -60,10 +60,11 @@ async def main(message: cl.Message):
     response = await cl.make_async(query_engine.query)(message.content)
 
     response_message = cl.Message(content="")
+    await response_message.send()
 
     if isinstance(response, Response):
         response_message.content = str(response)
-        await response_message.send()
+        await response_message.update()
     elif isinstance(response, StreamingResponse):
         gen = response.response_gen
         for token in gen:
@@ -72,4 +73,4 @@ async def main(message: cl.Message):
         if response.response_txt:
             response_message.content = response.response_txt
 
-        await response_message.send()
+        await response_message.update()

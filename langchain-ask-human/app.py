@@ -1,6 +1,6 @@
-from langchain import OpenAI, LLMMathChain
+from langchain.chains import LLMMathChain
 from langchain.agents import initialize_agent, Tool, AgentType, AgentExecutor
-from langchain.chat_models import ChatOpenAI
+from langchain.llms.openai import OpenAI
 from typing import *
 from langchain.tools import BaseTool
 
@@ -35,13 +35,12 @@ class HumanInputChainlit(BaseTool):
     ) -> str:
         """Use the Human input tool."""
         res = await cl.AskUserMessage(content=query).send()
-        return res["content"]
+        return res["output"]
 
 
 @cl.on_chat_start
 def start():
-    llm = ChatOpenAI(temperature=0, streaming=True)
-    llm1 = OpenAI(temperature=0, streaming=True)
+    llm = OpenAI(temperature=0, streaming=True)
     llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
 
     tools = [
@@ -54,7 +53,7 @@ def start():
         ),
     ]
     agent = initialize_agent(
-        tools, llm1, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+        tools, llm, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
 
     cl.user_session.set("agent", agent)
