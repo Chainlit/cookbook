@@ -1,7 +1,6 @@
-import os
 import json
+import os
 from typing import Dict
-
 from openai import AsyncOpenAI
 from openai.types.beta import Thread
 from openai.types.beta.threads import (
@@ -11,11 +10,11 @@ from openai.types.beta.threads import (
 )
 import chainlit as cl
 from chainlit.context import context
+from create_assistant import tool_map
 
 api_key = os.environ.get("OPENAI_API_KEY")
 client = AsyncOpenAI(api_key=api_key)
 assistant_id = os.environ.get("ASSISTANT_ID")
-
 
 async def process_thread_message(
     message_references: Dict[str, cl.Message], thread_message: ThreadMessage
@@ -55,12 +54,22 @@ async def process_thread_message(
             print("unknown message type", type(content_message))
 
 
+class DictToObject:
+    def __init__(self, dictionary):
+        for key, value in dictionary.items():
+            if isinstance(value, dict):
+                setattr(self, key, DictToObject(value))
+            else:
+                setattr(self, key, value)
+                
+    def __str__(self):
+        return '\n'.join(f'{key}: {value}' for key, value in self.__dict__.items())
+
 @cl.on_chat_start
 async def start_chat():
     thread = await client.beta.threads.create()
     cl.user_session.set("thread", thread)
     await cl.Message(author="assistant", content="Ask me math questions!").send()
-
 
 @cl.on_message
 async def run_conversation(message_from_ui: cl.Message):
@@ -80,7 +89,7 @@ async def run_conversation(message_from_ui: cl.Message):
     )
 
     message_references = {}  # type: Dict[str, cl.Message]
-
+    tool_outputs = []
     # Periodically check for updates
     while True:
         run = await client.beta.threads.runs.retrieve(
@@ -91,7 +100,7 @@ async def run_conversation(message_from_ui: cl.Message):
         run_steps = await client.beta.threads.runs.steps.list(
             thread_id=thread.id, run_id=run.id, order="asc"
         )
-
+        
         for step in run_steps.data:
             # Fetch step details
             run_step = await client.beta.threads.runs.steps.retrieve(
@@ -108,6 +117,9 @@ async def run_conversation(message_from_ui: cl.Message):
 
             if step_details.type == "tool_calls":
                 for tool_call in step_details.tool_calls:
+                    if isinstance(tool_call, dict):
+                        tool_call = DictToObject(tool_call)
+                        
                     if tool_call.type == "code_interpreter":
                         if not tool_call.id in message_references:
                             message_references[tool_call.id] = cl.Message(
@@ -139,7 +151,16 @@ async def run_conversation(message_from_ui: cl.Message):
                             message_references[tool_output_id].content = (
                                 str(tool_call.code_interpreter.outputs) or ""
                             )
+                            
                             await message_references[tool_output_id].update()
+                            
+                        tool_outputs.append(
+                                {
+                                    "output": tool_call.code_interpreter.outputs or "",
+                                    "tool_call_id": tool_call.id,
+                                }
+                            )
+                        
                     elif tool_call.type == "retrieval":
                         if not tool_call.id in message_references:
                             message_references[tool_call.id] = cl.Message(
@@ -148,7 +169,9 @@ async def run_conversation(message_from_ui: cl.Message):
                                 parent_id=context.session.root_message.id,
                             )
                             await message_references[tool_call.id].send()
+                            
                     elif tool_call.type == "function":
+            
                         function_name = tool_call.function.name
                         function_args = json.loads(tool_call.function.arguments)
 
@@ -161,20 +184,17 @@ async def run_conversation(message_from_ui: cl.Message):
                             )
                             await message_references[tool_call.id].send()
 
-                            output = "22C"  # Actually call your function here
-
-                            await client.beta.threads.runs.submit_tool_outputs(
-                                thread_id=thread.id,
-                                run_id=run.id,
-                                tool_outputs=[
-                                    {
-                                        "tool_call_id": tool_call.id,
-                                        "output": output,
-                                    },
-                                ],
+                            tool_output = tool_map[function_name](**json.loads(tool_call.function.arguments))
+                            tool_outputs.append(
+                                {"output": tool_output, "tool_call_id": tool_call.id}
                             )
+            if run.status == "requires_action" and run.required_action.type == "submit_tool_outputs":
+                await client.beta.threads.runs.submit_tool_outputs(
+                    thread_id=thread.id,
+                    run_id=run.id,
+                    tool_outputs=tool_outputs,
+                )
 
         await cl.sleep(1)  # Refresh every second
-
         if run.status in ["cancelled", "failed", "completed", "expired"]:
             break
