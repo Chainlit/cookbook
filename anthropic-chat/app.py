@@ -18,7 +18,7 @@ async def start_chat():
     ).send()
 
 
-@cl.step(name="Claude", type="LLM", root=True)
+@cl.step(name="Claude", type="llm", root=True)
 async def call_claude(query: str):
     prompt_history = cl.user_session.get("prompt_history")
 

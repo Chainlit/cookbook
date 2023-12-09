@@ -14,7 +14,7 @@ settings = {
 }
 
 
-@cl.step(name="gpt-3.5", type="LLM")
+@cl.step(name="gpt-3.5", type="llm")
 async def call_openai():
     generation = cl.ChatGeneration(
         provider=ChatOpenAI.id,

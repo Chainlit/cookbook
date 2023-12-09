@@ -71,7 +71,7 @@ async def process_tool_call(
     if not tool_call.id in step_references:
         cl_step = cl.Step(
             name=name,
-            type="TOOL",
+            type="tool",
             parent_id=cl.context.current_step.id,
             show_input=show_input,
         )
@@ -116,7 +116,7 @@ async def start_chat():
     ).send()
 
 
-@cl.step(name="Assistant", type="RUN", root=True)
+@cl.step(name="Assistant", type="run", root=True)
 async def run(thread_id: str, human_query: str):
     # Add the message to the thread
     init_message = await client.beta.threads.messages.create(

@@ -36,7 +36,7 @@ Short and concise analysis:
 """
 
 
-@cl.step(type="LLM")
+@cl.step(type="llm")
 async def gen_query(human_query: str):
     current_step = cl.context.current_step
     current_step.generation = cl.ChatGeneration(
@@ -84,7 +84,7 @@ async def execute_query(query):
     return markdown_table
 
 
-@cl.step(type="LLM")
+@cl.step(type="llm")
 async def analyze(table):
     current_step = cl.context.current_step
     today = str(date.today())
@@ -126,7 +126,7 @@ async def analyze(table):
     return current_step.output
 
 
-@cl.step(type="RUN")
+@cl.step(type="run")
 async def chain(human_query: str):
     sql_query = await gen_query(human_query)
     table = await execute_query(sql_query)

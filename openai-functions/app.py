@@ -57,7 +57,7 @@ def start_chat():
     )
 
 
-@cl.step(type="TOOL")
+@cl.step(type="tool")
 async def call_tool(tool_call, message_history):
     function_name = tool_call.function.name
     arguments = ast.literal_eval(tool_call.function.arguments)
@@ -85,7 +85,7 @@ async def call_tool(tool_call, message_history):
     )
 
 
-@cl.step(type="LLM")
+@cl.step(type="llm")
 async def call_gpt4(message_history):
     settings = {
         "model": "gpt-4",
