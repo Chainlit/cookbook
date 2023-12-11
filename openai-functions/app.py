@@ -14,7 +14,7 @@ MAX_ITER = 5
 
 # Example dummy function hard coded to return the same weather
 # In production, this could be your backend API or an external API
-def get_current_weather(location, unit):
+def get_current_weather(location, unit=None):
     """Get the current weather in a given location"""
     unit = unit or "Farenheit"
     weather_info = {
