@@ -16,6 +16,24 @@ api_key = os.environ.get("OPENAI_API_KEY")
 client = AsyncOpenAI(api_key=api_key)
 assistant_id = os.environ.get("ASSISTANT_ID")
 
+# List of allowed mime types 
+allowed_mime = ['text/csv']
+
+# Check if the files uploaded are allowed
+async def check_files(files):
+    for file in files: 
+        if file.mime not in allowed_mime:
+            return False
+    return True
+
+# Upload files to the assistant
+async def upload_files(files):
+    file_ids = []
+    for file in files:
+        uploaded_file = await client.files.create(file=file.content, purpose="assistants")    
+        file_ids.append(uploaded_file.id)
+    return file_ids
+
 async def process_thread_message(
     message_references: Dict[str, cl.Message], thread_message: ThreadMessage
 ):
@@ -74,9 +92,27 @@ async def start_chat():
 @cl.on_message
 async def run_conversation(message_from_ui: cl.Message):
     thread = cl.user_session.get("thread")  # type: Thread
-    # Add the message to the thread
+
+    # Get input files
+    input_files = message_from_ui.elements
+    
+    # Upload files if any and get file_ids
+    file_ids = []
+    if len(input_files) > 0:
+
+        files_ok = await check_files(input_files)
+
+        if not files_ok:
+            file_error_msg = f"Hey, it seems you have uploaded one or more files that we do not support currently, please upload only : {(',').join(allowed_mime)}"
+            await cl.Message(content=file_error_msg).send()
+            return
+        
+        file_ids = await upload_files(input_files)
+
+    # Add the message to the thread with files
     init_message = await client.beta.threads.messages.create(
-        thread_id=thread.id, role="user", content=message_from_ui.content
+        thread_id=thread.id, role="user", content=message_from_ui.content,
+        file_ids=file_ids
     )
 
     # Send empty message to display the loader
