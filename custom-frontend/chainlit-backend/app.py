@@ -20,7 +20,7 @@ settings = {
 }
 
 @app.get("/custom-auth")
-async def hello():
+async def custom_auth():
     # Verify the user's identity with custom logic.
     token = create_jwt(cl.User(identifier="Test User"))
     return JSONResponse({"token": token})
