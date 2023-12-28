@@ -112,5 +112,5 @@ You can also answer weather questions!
     assistant_dict[assistant_name] = assistant.id
     json.dump(assistant_dict, open("assistants.json", "w"))
 
-
-asyncio.run(create())
+if __name__ == "__main__":
+    asyncio.run(create())

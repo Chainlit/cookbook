@@ -1,7 +1,8 @@
 import json
 import os
+from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, List
 from openai import AsyncOpenAI
 from openai.types.beta import Thread
 from openai.types.beta.threads import (
@@ -11,12 +12,53 @@ from openai.types.beta.threads import (
 )
 from openai.types.beta.threads.runs import RunStep
 from openai.types.beta.threads.runs.tool_calls_step_details import ToolCall
-import chainlit as cl
 from create_assistant import tool_map
+
+from chainlit.element import Element
+import chainlit as cl
+
 
 api_key = os.environ.get("OPENAI_API_KEY")
 client = AsyncOpenAI(api_key=api_key)
 assistant_id = os.environ.get("ASSISTANT_ID")
+
+# List of allowed mime types
+allowed_mime = ["text/csv", "application/pdf"]
+
+
+# Check if the files uploaded are allowed
+async def check_files(files: List[Element]):
+    for file in files:
+        if file.mime not in allowed_mime:
+            return False
+    return True
+
+
+# Upload files to the assistant
+async def upload_files(files: List[Element]):
+    file_ids = []
+    for file in files:
+        uploaded_file = await client.files.create(
+            file=Path(file.path), purpose="assistants"
+        )
+        file_ids.append(uploaded_file.id)
+    return file_ids
+
+
+async def process_files(files: List[Element]):
+    # Upload files if any and get file_ids
+    file_ids = []
+    if len(files) > 0:
+        files_ok = await check_files(files)
+
+        if not files_ok:
+            file_error_msg = f"Hey, it seems you have uploaded one or more files that we do not support currently, please upload only : {(',').join(allowed_mime)}"
+            await cl.Message(content=file_error_msg).send()
+            return file_ids
+
+        file_ids = await upload_files(files)
+
+    return file_ids
 
 
 async def process_thread_message(
@@ -117,10 +159,10 @@ async def start_chat():
 
 
 @cl.step(name="Assistant", type="run", root=True)
-async def run(thread_id: str, human_query: str):
+async def run(thread_id: str, human_query: str, file_ids: List[str] = []):
     # Add the message to the thread
     init_message = await client.beta.threads.messages.create(
-        thread_id=thread_id, role="user", content=human_query
+        thread_id=thread_id, role="user", content=human_query, file_ids=file_ids
     )
 
     # Create the run
@@ -221,7 +263,7 @@ async def run(thread_id: str, human_query: str):
                     tool_outputs=tool_outputs,
                 )
 
-        await cl.sleep(1)  # Refresh every second
+        await cl.sleep(2)  # Refresh every 2 seconds
         if run.status in ["cancelled", "failed", "completed", "expired"]:
             break
 
@@ -229,5 +271,7 @@ async def run(thread_id: str, human_query: str):
 @cl.on_message
 async def on_message(message_from_ui: cl.Message):
     thread = cl.user_session.get("thread")  # type: Thread
-
-    await run(thread_id=thread.id, human_query=message_from_ui.content)
+    files_ids = await process_files(message_from_ui.elements)
+    await run(
+        thread_id=thread.id, human_query=message_from_ui.content, file_ids=files_ids
+    )
