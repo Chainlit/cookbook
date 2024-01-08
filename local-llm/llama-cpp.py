@@ -1,5 +1,5 @@
-from langchain.llms import LlamaCpp
-from langchain import PromptTemplate
+from langchain.llms.llamacpp import LlamaCpp
+from langchain.prompts import PromptTemplate
 from langchain.chains import ConversationChain
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 

@@ -86,14 +86,13 @@ async def on_chat_start():
 @cl.on_message
 async def on_message(message: cl.Message):
     runnable = cl.user_session.get("runnable")  # type: Runnable
-
     msg = cl.Message(content="")
+
+    async with cl.Step(type="run", name="QA Assistant"):
+        async for chunk in runnable.astream(
+            message.content,
+            config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
+        ):
+            await msg.stream_token(chunk)
+
     await msg.send()
-
-    async for chunk in runnable.astream(
-        message.content,
-        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
-    ):
-        await msg.stream_token(chunk)
-
-    await msg.update()

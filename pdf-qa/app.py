@@ -32,21 +32,12 @@ welcome_message = """Welcome to the Chainlit PDF QA demo! To get started:
 
 
 def process_file(file: AskFileResponse):
-    import tempfile
-
     if file.type == "text/plain":
         Loader = TextLoader
     elif file.type == "application/pdf":
         Loader = PyPDFLoader
 
-    with tempfile.NamedTemporaryFile(mode="wb", delete=False) as tempfile:
-        if file.type == "text/plain":
-            tempfile.write(file.content)
-        elif file.type == "application/pdf":
-            with open(tempfile.name, "wb") as f:
-                f.write(file.content)
-
-        loader = Loader(tempfile.name)
+        loader = Loader(file.path)
         documents = loader.load()
         docs = text_splitter.split_documents(documents)
         for i, doc in enumerate(docs):
@@ -61,7 +52,7 @@ def get_docsearch(file: AskFileResponse):
     cl.user_session.set("docs", docs)
 
     # Create a unique namespace for the file
-    namespace = str(hash(file.content))
+    namespace = file.id
 
     if namespace in namespaces:
         docsearch = Pinecone.from_existing_index(
@@ -89,14 +80,11 @@ async def start():
             accept=["text/plain", "application/pdf"],
             max_size_mb=20,
             timeout=180,
-            disable_human_feedback=True,
         ).send()
 
     file = files[0]
 
-    msg = cl.Message(
-        content=f"Processing `{file.name}`...", disable_human_feedback=True
-    )
+    msg = cl.Message(content=f"Processing `{file.name}`...", disable_feedback=True)
     await msg.send()
 
     # No async implementation in the Pinecone client, fallback to sync

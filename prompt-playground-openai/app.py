@@ -1,6 +1,5 @@
 from openai import AsyncOpenAI
 import chainlit as cl
-from chainlit.prompt import Prompt, PromptMessage
 from chainlit.playground.providers import ChatOpenAI
 
 client = AsyncOpenAI()
@@ -15,15 +14,14 @@ settings = {
 }
 
 
-@cl.on_chat_start
-async def start():
-    # Create the Chainlit Prompt instance
-    prompt = Prompt(
+@cl.step(name="gpt-3.5", type="llm")
+async def call_openai():
+    generation = cl.ChatGeneration(
         provider=ChatOpenAI.id,
         inputs=inputs,
         settings=settings,
         messages=[
-            PromptMessage(
+            cl.GenerationMessage(
                 template=template, formatted=template.format(**inputs), role="assistant"
             )
         ],
@@ -31,12 +29,16 @@ async def start():
 
     # Make the call to OpenAI
     response = await client.chat.completions.create(
-        messages=[m.to_openai() for m in prompt.messages], **settings
+        messages=[m.to_openai() for m in generation.messages], **settings
     )
 
-    prompt.completion = response.choices[0].message.content
+    generation.completion = response.choices[0].message.content
 
-    await cl.Message(
-        content="The content of the message is not important.",
-        prompt=prompt,
-    ).send()
+    cl.context.current_step.generation = generation
+
+    return generation.completion
+
+
+@cl.on_chat_start
+async def start():
+    await call_openai()

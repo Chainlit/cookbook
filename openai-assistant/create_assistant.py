@@ -32,7 +32,7 @@ tools = [
                 },
                 "required": ["location", "format"],
             },
-        }
+        },
     },
     {
         "type": "function",
@@ -54,11 +54,11 @@ tools = [
                     "num_days": {
                         "type": "integer",
                         "description": "The number of days to forecast",
-                    }
+                    },
                 },
-                "required": ["location", "format", "num_days"]
+                "required": ["location", "format", "num_days"],
             },
-        }
+        },
     },
 ]
 
@@ -70,7 +70,9 @@ def get_current_weather(location: str, format: str):
 
 def get_n_day_weather_forecast(location: str, format: str, num_days: int):
     # return dummy weather
-    return "The weather forecast for the next {} days in {} is {} degrees {}".format(num_days, location, 20, format)
+    return "The weather forecast for the next {} days in {} is {} degrees {}".format(
+        num_days, location, 20, format
+    )
 
 
 tool_map = {
@@ -84,26 +86,31 @@ async def create():
 
     instructions = """You are a personal math tutor. Write and run code to answer math questions.
 Enclose math expressions in $$ (this is helpful to display latex). Example:
-
+```
 Given a formula below $$ s = ut + \frac{1}{2}at^{2} $$ Calculate the value of $s$ when $u = 10\frac{m}{s}$ and $a = 2\frac{m}{s^{2}}$ at $t = 1s$
+```
+
+You can also answer weather questions!
 """
 
     assistant = await client.beta.assistants.create(
-        name="Math Tutor",
+        name="Math Tutor And Weather Bot",
         instructions=instructions,
         tools=tools,
         model="gpt-4-1106-preview",
     )
-    assistant_name = "searchistant"
-    # append key vallue pair to assistants.json
+    assistant_name = "math_tutor_and_weather_bot"
+    # append key value pair to assistants.json
 
     def load_or_create_json(filename):
         try:
             return json.load(open(filename, "r"))
         except FileNotFoundError:
             return {}
+
     assistant_dict = load_or_create_json("assistants.json")
     assistant_dict[assistant_name] = assistant.id
     json.dump(assistant_dict, open("assistants.json", "w"))
 
-asyncio.run(create())
+if __name__ == "__main__":
+    asyncio.run(create())

@@ -7,8 +7,7 @@ from langchain.schema.runnable import Runnable, RunnablePassthrough, RunnableLam
 from langchain.schema.runnable.config import RunnableConfig
 from langchain.memory import ConversationBufferMemory
 
-from chainlit.client.base import ConversationDict
-
+from chainlit.types import ThreadDict
 import chainlit as cl
 
 
@@ -36,7 +35,7 @@ def setup_runnable():
 
 @cl.password_auth_callback
 def auth():
-    return cl.AppUser(username="test")
+    return cl.User(identifier="test")
 
 
 @cl.on_chat_start
@@ -46,14 +45,14 @@ async def on_chat_start():
 
 
 @cl.on_chat_resume
-async def on_chat_resume(conversation: ConversationDict):
+async def on_chat_resume(thread: ThreadDict):
     memory = ConversationBufferMemory(return_messages=True)
-    root_messages = [m for m in conversation["messages"] if m["parentId"] == None]
+    root_messages = [m for m in thread["steps"] if m["parentId"] == None]
     for message in root_messages:
-        if message["authorIsUser"]:
-            memory.chat_memory.add_user_message(message["content"])
+        if message["type"] == "USER_MESSAGE":
+            memory.chat_memory.add_user_message(message["output"])
         else:
-            memory.chat_memory.add_ai_message(message["content"])
+            memory.chat_memory.add_ai_message(message["output"])
 
     cl.user_session.set("memory", memory)
 

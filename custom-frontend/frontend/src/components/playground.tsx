@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import {
   useChatInteract,
   useChatMessages,
-  IMessage,
+  IStep,
 } from "@chainlit/react-client";
 import { useState } from "react";
 
@@ -17,11 +17,11 @@ export function Playground() {
   const handleSendMessage = () => {
     const content = inputValue.trim();
     if (content) {
-      const message = {
+      const message: IStep = {
         id: uuidv4(),
-        author: "user",
-        content: content,
-        authorIsUser: true,
+        name: "user",
+        type: "user_message",
+        output: content,
         createdAt: new Date().toISOString(),
       };
       sendMessage(message, []);
@@ -29,7 +29,7 @@ export function Playground() {
     }
   };
 
-  const renderMessage = (message: IMessage) => {
+  const renderMessage = (message: IStep) => {
     const dateOptions: Intl.DateTimeFormatOptions = {
       hour: "2-digit",
       minute: "2-digit",
@@ -40,9 +40,9 @@ export function Playground() {
     );
     return (
       <div key={message.id} className="flex items-start space-x-2">
-        <div className="w-20 text-sm text-green-500">{message.author}</div>
+        <div className="w-20 text-sm text-green-500">{message.name}</div>
         <div className="flex-1 border rounded-lg p-2">
-          <p className="text-black dark:text-white">{message.content}</p>
+          <p className="text-black dark:text-white">{message.output}</p>
           <small className="text-xs text-gray-500">{date}</small>
         </div>
       </div>

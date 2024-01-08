@@ -1,6 +1,10 @@
 import os
 from openai import AsyncOpenAI
 
+from fastapi.responses import JSONResponse
+
+from chainlit.auth import create_jwt
+from chainlit.server import app
 import chainlit as cl
 
 
@@ -15,6 +19,11 @@ settings = {
     "presence_penalty": 0,
 }
 
+@app.get("/custom-auth")
+async def custom_auth():
+    # Verify the user's identity with custom logic.
+    token = create_jwt(cl.User(identifier="Test User"))
+    return JSONResponse({"token": token})
 
 @cl.on_chat_start
 async def on_chat_start():
