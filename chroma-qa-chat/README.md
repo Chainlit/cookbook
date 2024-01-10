@@ -1,7 +1,7 @@
-Title: Arxiv Q&A
-Tags: [QA, chromadb, huggingface, deployment]
+Title: Chroma Q&A with sources element
+Tags: [QA, chromadb, elements, sources]
 ---
-title: ArxivChainLitDemo
+title: ChromaChainLitDemo
 emoji: 💻
 colorFrom: indigo
 colorTo: gray
@@ -10,17 +10,17 @@ pinned: false
 license: openrail
 ---
 
-# Question & Answering on Arxiv papers
+# Question & Answering on PDF docs
 
 This folder is showing how to:
-
 - Ask a user for a PDF file
-- Chunk that file and create embeddings 
+- Chunk that file and create embeddings
 - Store those embeddings on Chroma
+- Use SQLRecordManager to keep track of document writes into a vector store
 - Answer questions from users as well as showing the sources used to answer.
-- How to deploy on HuggingFace Spaces
+
+![Screenshot](./screenshot.png)
+
+# See also
 
 Video from [Chris Alexiuk](https://twitter.com/c_s_ale): https://www.youtube.com/watch?v=9SBUStfCtmk&ab_channel=ChrisAlexiuk
-
-Note: the code is updated to work with the new async implementation
-
