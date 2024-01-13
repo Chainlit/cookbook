@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """Example LangChain server exposes a retriever."""
 from fastapi import FastAPI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores.faiss import FAISS
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema import StrOutputParser
 
 import uuid
 
@@ -18,17 +19,22 @@ from langserve import add_routes
 
 client = LiteralClient()
 
-vectorstore = FAISS.from_texts(
-    ["cats like fish", "dogs like sticks"], embedding=OpenAIEmbeddings()
+model = ChatOpenAI(streaming=True)
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You're a very knowledgeable historian who provides accurate and eloquent answers to historical questions.",
+        ),
+        ("human", "{question}"),
+    ]
 )
-retriever = vectorstore.as_retriever()
+runnable = prompt | model | StrOutputParser()
 
 
 def per_req_config_modifier(config, request):
     thread_id = request.headers.get("thread_id") or uuid.uuid4().hex
     parent_id = request.headers.get("run_id")
-
-    print("current thread", active_steps_var.get())
 
     active_thread_var.set(Thread(id=thread_id))
     if parent_id:
@@ -51,7 +57,7 @@ app = FastAPI(
 # /stream
 add_routes(
     app,
-    retriever,
+    runnable,
     config_keys=["callbacks"],
     per_req_config_modifier=per_req_config_modifier,
     path="/test",
