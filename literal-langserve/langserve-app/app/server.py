@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Example LangChain server exposes a retriever."""
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
@@ -8,8 +8,6 @@ from langchain.schema import StrOutputParser
 import uuid
 
 from literalai import LiteralClient
-from literalai.context import active_thread_var, active_steps_var
-from literalai import Thread, Step
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -33,13 +31,6 @@ runnable = prompt | model | StrOutputParser()
 
 
 def per_req_config_modifier(config, request):
-    thread_id = request.headers.get("thread_id") or uuid.uuid4().hex
-    parent_id = request.headers.get("run_id")
-
-    active_thread_var.set(Thread(id=thread_id))
-    if parent_id:
-        active_steps_var.set([Step(id=parent_id)])
-
     config["callbacks"] = [client.langchain_callback()]
     return config
 
@@ -49,6 +40,22 @@ app = FastAPI(
     version="1.0",
     description="Spin up a simple api server using Langchain's Runnable interfaces",
 )
+
+
+@app.middleware("http")
+async def set_context_vars(request: Request, call_next):
+    from literalai.context import active_steps_var, active_thread_var
+
+    # Reset context vars
+    active_steps_var.set([])
+    active_thread_var.set(None)
+
+    # Set thread_id
+    thread_id = request.headers.get("thread_id") or uuid.uuid4().hex
+    async with client.thread(thread_id=thread_id):
+        response = await call_next(request)
+
+    return response
 
 
 # Adds routes to the app for using the retriever under:
