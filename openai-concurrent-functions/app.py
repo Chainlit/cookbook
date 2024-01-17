@@ -52,9 +52,9 @@ def start_chat():
     )
 
 @cl.step(type="tool")
-async def call_tool(tool_call, location):
+async def call_tool(tool_call, message_history):
     function_name = tool_call.function.name
-    arguments = {"location": location}
+    arguments = ast.literal_eval(tool_call.function.arguments)
 
     current_step = cl.context.current_step
     current_step.name = function_name
@@ -69,12 +69,14 @@ async def call_tool(tool_call, location):
     current_step.output = function_response
     current_step.language = "json"
 
-    return {
-        "role": "function",
-        "name": function_name,
-        "content": function_response,
-        "tool_call_id": tool_call.id,
-    }
+    message_history.append(
+        {
+            "role": "function",
+            "name": function_name,
+            "content": function_response,
+            "tool_call_id": tool_call.id,
+        }
+    )
 
 @cl.step(type="llm")
 async def call_gpt4(message_history):
@@ -101,11 +103,7 @@ async def call_gpt4(message_history):
 
     message = response.choices[0].message
 
-    # Parse locations from message content
-    locations = message.content.split(" and ")
-
-    # Call get_current_weather for each location
-    tasks = [call_tool(tool_call, location.strip()) for location in locations for tool_call in message.tool_calls or [] if tool_call.type == "function"]
+    tasks = [call_tool(tool_call, message_history) for tool_call in message.tool_calls or [] if tool_call.type == "function"]
     await asyncio.gather(*tasks)
 
     if message.content:
@@ -129,16 +127,9 @@ async def run_conversation(message: cl.Message):
     cur_iter = 0
 
     while cur_iter < MAX_ITER:
-        # Create a list of tasks for each message in the message history
-        tasks = [call_gpt4(message) for message in message_history]
-
-        # Run tasks concurrently using asyncio.gather
-        messages = await asyncio.gather(*tasks)
-
-        # Process the returned messages
-        for message in messages:
-            if not message.tool_calls:
-                await cl.Message(content=message.content, author="Answer").send()
-                break
+        message = await call_gpt4(message_history)
+        if not message.tool_calls:
+            await cl.Message(content=message.content, author="Answer").send()
+            break
 
         cur_iter += 1
