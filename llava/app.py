@@ -315,9 +315,9 @@ async def setup_agent(settings):
 async def main(message: cl.Message):
     image = next(
         (
-            Image.open(io.BytesIO(file.content))
+            Image.open(file.path)
             for file in message.elements or []
-            if "image" in file.mime
+            if "image" in file.mime and file.path is not None
         ),
         None,
     )
