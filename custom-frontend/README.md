@@ -1,3 +1,8 @@
+---
+title: 'Custom frontend with Chainlit!'
+tags: ['custom', 'frontend', 'chainlit']
+---
+
 # Custom frontend with Chainlit!
 
 The Chainlit websocket client is available in the [@chainlit/react-client](https://www.npmjs.com/package/@chainlit/react-client) npm package.

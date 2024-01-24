@@ -1,3 +1,8 @@
+---
+title: 'ChainLit Local LLM Integration'
+tags: ['chainlit', 'local', 'llm']
+---
+
 # ChainLit Local LLM Integration
 
 This repository contains examples of integrating various local Large Language Models (LLMs) with ChainLit, a framework for building interactive applications with LLMs. Each example demonstrates how to set up a different LLM for use within the ChainLit environment.

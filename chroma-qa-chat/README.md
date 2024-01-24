@@ -1,13 +1,6 @@
-Title: Chroma Q&A with sources element
-Tags: [QA, chromadb, elements, sources]
 ---
-title: ChromaChainLitDemo
-emoji: 💻
-colorFrom: indigo
-colorTo: gray
-sdk: docker
-pinned: false
-license: openrail
+title: 'Chroma Q&A with Sources Element'
+tags: ['chroma', 'chainlit', 'qa']
 ---
 
 # Chroma Q&A with Sources Element

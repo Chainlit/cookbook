@@ -1,3 +1,8 @@
+---
+title: 'OpenInterpreter x Chainlit'
+tags: ['openinterpreter', 'chainlit']
+---
+
 # Welcome to OpenInterpreter x Chainlit! 🚀🤖
 
 **OpenInterpreter**: https://github.com/KillianLucas/open-interpreter/

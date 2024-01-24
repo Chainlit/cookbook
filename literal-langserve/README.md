@@ -1,3 +1,8 @@
+---
+title: 'Literal AI + Chainlit + Langserve'
+tags: ['literal', 'chainlit', 'langserve']
+---
+
 # Literal AI + Chainlit + Langserve
 
 ## Configure Langserve

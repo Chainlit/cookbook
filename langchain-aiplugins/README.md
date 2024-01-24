@@ -1,9 +1,6 @@
 Title: ChatGPT plugins & LangChain
 Tags: [chatgpt, langchain, plugins]
 
-Title: ChatGPT plugins & LangChain
-Tags: [chatgpt, langchain, plugins]
-
 # LangChain AI plugins
 
 This directory contains an example of how to integrate public ChatGPT plugins with LangChain and Chainlit. It demonstrates the setup of a simple Chainlit application that utilizes an AI plugin to enhance the capabilities of a LangChain agent.

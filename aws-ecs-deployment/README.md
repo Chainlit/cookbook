@@ -1,3 +1,8 @@
+---
+title: 'Deploying Chainlit Apps to AWS ECS'
+tags: ['AWS', 'ECS', 'deployment']
+---
+
 # Deploying Chainlit Apps to AWS ECS
 
 This repository provides a step-by-step guide to deploying Chainlit applications on AWS Elastic Container Service (ECS).

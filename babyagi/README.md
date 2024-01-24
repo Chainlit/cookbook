@@ -1,3 +1,8 @@
+---
+title: 'Chainlit BabyAGI Integration Demo'
+tags: ['babyagi', 'integration', 'chainlit']
+---
+
 # Chainlit BabyAGI Integration Demo
 
 This repository demonstrates the integration of Chainlit with BabyAGI, an autonomous agent framework. The integration showcases how Chainlit can be used to enhance observability and interaction with AI agents.

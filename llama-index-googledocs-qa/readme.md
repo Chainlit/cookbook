@@ -1,3 +1,8 @@
+---
+title: 'Llama Index Google Docs QA'
+tags: ['llama', 'index', 'google', 'docs', 'qa']
+---
+
 # Llama Index Google Docs QA
 
 This Python application integrates a question-answering system using the Llama Index with Google Docs as the data source. It leverages OpenAI's GPT models for generating responses and ChainLit for creating interactive chat applications.
