@@ -1,3 +1,8 @@
+---
+title: 'Llama Index Chat Application'
+tags: ['llama', 'index', 'chat']
+---
+
 # Llama Index Chat Application
 
 This application integrates a chat interface with a retriever-type query engine, providing a streamlined way to interact with and retrieve information from a document index using natural language queries.

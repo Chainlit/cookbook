@@ -1,3 +1,8 @@
+---
+title: 'BigQuery Agent with Chainlit'
+tags: ['bigquery', 'chainlit']
+---
+
 # BigQuery Agent with Chainlit
 
 This repository contains a Chainlit application that acts as an interface between users and Google BigQuery. It leverages OpenAI's language model to generate SQL queries from natural language questions, execute them on BigQuery, and then analyze and explain the results in a user-friendly manner.

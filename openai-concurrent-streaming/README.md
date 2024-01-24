@@ -1,3 +1,8 @@
+---
+title: 'Two OpenAI bots streaming in parallel with Chainlit'
+tags: ['open-ai', 'concurrent-streaming']
+---
+
 # Two OpenAI bots streaming in parallel with Chainlit
 
 This Python script is designed to handle concurrent tasks and streaming responses, which are key features for real-time, interactive chatbots.

@@ -1,3 +1,8 @@
+---
+title: 'Langchain Plotly Example'
+tags: ['langchain', 'plotly']
+---
+
 # Langchain Plotly Example
 
 In this example, a langchain agent is used to parse a CSV file and generate plotly graphs through Chainlit. This is educational and doesn't perform well.

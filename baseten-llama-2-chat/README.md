@@ -1,3 +1,8 @@
+---
+title: 'Baseten Llama 2 Chat Interface'
+tags: ['baseten', 'llama2']
+---
+
 # Baseten Llama 2 Chat Interface
 
 This repository contains a Chainlit application that provides a chat interface for interacting with the Llama 2 model hosted on Baseten. It simulates a ChatGPT-like experience, allowing users to have context-aware conversations with the AI model.

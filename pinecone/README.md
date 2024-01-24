@@ -1,3 +1,8 @@
+---
+title: 'Chat your Pinecone database'
+tags: ['pinecone', 'chainlit']
+---
+
 # Chat your Pinecone database
 
 This folder contains an example application that demonstrates how to:

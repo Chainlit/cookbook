@@ -1,3 +1,9 @@
+---
+title: 'Your own Claude by Anthropic 🔥'
+tags: ['anthropic']
+---
+
+
 # Your own Claude by Anthropic 🔥
 
 This folder contains a simple Chainlit application that integrates with the Anthropic API to create an interactive chat experience with Claude, an AI developed by Anthropic.

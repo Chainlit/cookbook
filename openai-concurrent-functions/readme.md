@@ -1,3 +1,8 @@
+---
+title: 'Chainlit Cookbook: OpenAI Concurrent Functions'
+tags: ['chainlit', 'cookbook', 'openai']
+---
+
 # Chainlit Cookbook: OpenAI Concurrent Functions
 
 This is a guide to the code example provided in the `chainlit-cookbook/openai-concurrent-functions` directory. The code demonstrates how to use Chainlit, a powerful tool for prototyping, debugging, and sharing applications built on top of Language Learning Models (LLMs), in conjunction with OpenAI's GPT-4 model.

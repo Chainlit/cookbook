@@ -1,3 +1,8 @@
+---
+title: 'Resume-Chat Application'
+tags: ['chainlit', 'langchain']
+---
+
 # Resume-Chat Application
 
 This application is designed to facilitate a chat session with a bot that can resume conversations. It uses the `chainlit` and `langchain` libraries to manage chat sessions and interactions with an AI model.

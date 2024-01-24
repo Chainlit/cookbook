@@ -1,8 +1,6 @@
 Title: Human-In-The-Loop Tool
 Tags: [human-interaction]
 
-# Human-In-The-Loop Tool
-Tags: [human-interaction]
 
 ## Ask Human
 

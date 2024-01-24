@@ -1,4 +1,9 @@
-# Chainlit Project
+---
+title: 'Chainlit Cookbook: codeinterpreter'
+tags: ['chainlit', 'cookbook', 'codeinterpreter']
+---
+
+# Chainlit Codeinterpreter
 
 Chainlit is an AI-driven project designed to carry out various tasks. It is built on a plugin architecture that can easily extend new features.
 

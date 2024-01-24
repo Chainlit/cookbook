@@ -1,3 +1,8 @@
+---
+title: 'Agent Prompt Playground'
+tags: ['prompt-playground', 'chainlit']
+---
+
 # Agent Prompt Playground
 
 The Agent Prompt Playground is an interactive environment within the ChainLit framework that enables developers to experiment with and refine their language model prompts. This tool facilitates the visualization, iteration, and versioning of prompts, which is crucial for improving the development and debugging workflows.
