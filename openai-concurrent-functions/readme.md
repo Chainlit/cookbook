@@ -1,6 +1,6 @@
 ---
-title: 'Chainlit Cookbook: OpenAI Concurrent Functions'
-tags: ['chainlit', 'cookbook', 'openai']
+title: 'OpenAI Parallel Function Calling'
+tags: ['openai', 'tools']
 ---
 
 # Chainlit Cookbook: OpenAI Concurrent Functions
@@ -14,10 +14,6 @@ The code example is a simple chatbot that uses the GPT-4 model to generate respo
 ## Key Components
 
 - `get_current_weather`: This function takes a location and a unit (either "celsius" or "fahrenheit") as input and returns a hardcoded weather report in the form of a JSON string.
-
-- `call_tool`: This function is a step in the Chainlit workflow. It takes a tool call and a message history as input, calls the `get_current_weather` function with the arguments provided in the tool call, and appends the function response to the message history.
-
-- `call_gpt4`: This function is another step in the Chainlit workflow. It takes a message history as input, generates a response using the GPT-4 model, and processes the response. If the response includes a tool call, it calls the `call_tool` function.
 
 - `run_conversation`: This function is the main loop of the chatbot. It takes a message as input, appends it to the message history, and then alternates between calling the `call_gpt4` function and processing its responses until a maximum number of iterations is reached.
 
