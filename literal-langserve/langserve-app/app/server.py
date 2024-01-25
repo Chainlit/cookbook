@@ -44,12 +44,8 @@ app = FastAPI(
 
 @app.middleware("http")
 async def set_context_vars(request: Request, call_next):
-    from literalai.context import active_steps_var, active_thread_var
-
     # Reset context vars
-    active_steps_var.set([])
-    active_thread_var.set(None)
-
+    client.reset_context()
     # Set thread_id
     thread_id = request.headers.get("thread_id") or uuid.uuid4().hex
     async with client.thread(thread_id=thread_id):
