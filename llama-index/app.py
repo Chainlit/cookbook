@@ -1,22 +1,18 @@
 import os
 import openai
-
-from llama_index.response.schema import Response, StreamingResponse
-from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
-from llama_index.callbacks.base import CallbackManager
-from llama_index import (
-    LLMPredictor,
-    ServiceContext,
-    StorageContext,
-    load_index_from_storage,
-)
-from langchain.chat_models import ChatOpenAI
 import chainlit as cl
 
+from llama_index.core import (
+    Settings,
+    StorageContext,
+    VectorStoreIndex,
+    SimpleDirectoryReader,
+    load_index_from_storage,
+)
+from llama_index.llms.openai import OpenAI
+from llama_index.embeddings.openai import OpenAIEmbedding
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-
-STREAMING = True
 
 try:
     # rebuild storage context
@@ -24,53 +20,35 @@ try:
     # load index
     index = load_index_from_storage(storage_context)
 except:
-    from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
-
-    documents = SimpleDirectoryReader("./data").load_data()
-    index = GPTVectorStoreIndex.from_documents(documents)
+    documents = SimpleDirectoryReader("./data").load_data(show_progress=True)
+    index = VectorStoreIndex.from_documents(documents)
     index.storage_context.persist()
 
 
 @cl.on_chat_start
-async def factory():
-    llm_predictor = LLMPredictor(
-        llm=ChatOpenAI(
-            temperature=0,
-            model_name="gpt-3.5-turbo",
-            streaming=STREAMING,
-        ),
+async def start():
+    Settings.llm = OpenAI(
+        model="gpt-3.5-turbo", temperature=0.1, max_tokens=1024, streaming=True
     )
-    service_context = ServiceContext.from_defaults(
-        llm_predictor=llm_predictor,
-        chunk_size=512,
-        callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]),
-    )
+    Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+    Settings.context_window = 4096
 
-    query_engine = index.as_query_engine(
-        service_context=service_context,
-        streaming=STREAMING,
-    )
-
+    query_engine = index.as_query_engine(streaming=True, similarity_top_k=2)
     cl.user_session.set("query_engine", query_engine)
+
+    await cl.Message(
+        author="Assistant", content="Hello! Im an AI assistant. How may I help you?"
+    ).send()
 
 
 @cl.on_message
 async def main(message: cl.Message):
-    query_engine = cl.user_session.get("query_engine")  # type: RetrieverQueryEngine
-    response = await cl.make_async(query_engine.query)(message.content)
+    query_engine = cl.user_session.get("query_engine")
 
-    response_message = cl.Message(content="")
-    await response_message.send()
+    msg = cl.Message(content="", author="Assistant")
 
-    if isinstance(response, Response):
-        response_message.content = str(response)
-        await response_message.update()
-    elif isinstance(response, StreamingResponse):
-        gen = response.response_gen
-        for token in gen:
-            await response_message.stream_token(token=token)
+    res = await cl.make_async(query_engine.query)(message.content)
 
-        if response.response_txt:
-            response_message.content = response.response_txt
-
-        await response_message.update()
+    for token in res.response_gen:
+        await msg.stream_token(token)
+    await msg.send()
