@@ -43,7 +43,7 @@ async def start():
 
 @cl.on_message
 async def main(message: cl.Message):
-    query_engine = cl.user_session.get("query_engine")
+    query_engine = cl.user_session.get("query_engine") # type: RetrieverQueryEngine
 
     msg = cl.Message(content="", author="Assistant")
 
