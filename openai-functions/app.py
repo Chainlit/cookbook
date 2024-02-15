@@ -97,7 +97,7 @@ async def call_gpt4(message_history):
         provider="openai-chat",
         messages=[
             cl.GenerationMessage(
-                formatted=m["content"], name=m.get("name"), role=m["role"]
+                content=m["content"], name=m.get("name", "function"), role=m["role"]
             )
             for m in message_history
         ],
@@ -131,7 +131,7 @@ async def call_gpt4(message_history):
 @cl.on_message
 async def run_conversation(message: cl.Message):
     message_history = cl.user_session.get("message_history")
-    message_history.append({"role": "user", "content": message.content})
+    message_history.append({"name": "user", "role": "user", "content": message.content})
 
     cur_iter = 0
 

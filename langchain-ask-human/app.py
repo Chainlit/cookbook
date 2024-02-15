@@ -1,6 +1,6 @@
 from langchain.chains import LLMMathChain
 from langchain.agents import initialize_agent, Tool, AgentType, AgentExecutor
-from langchain.llms.openai import OpenAI
+from langchain_community.chat_models import ChatOpenAI
 from typing import *
 from langchain.tools import BaseTool
 
@@ -40,7 +40,7 @@ class HumanInputChainlit(BaseTool):
 
 @cl.on_chat_start
 def start():
-    llm = OpenAI(temperature=0, streaming=True)
+    llm = ChatOpenAI(temperature=0, streaming=True, model_name="gpt-4-turbo-preview")
     llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
 
     tools = [
