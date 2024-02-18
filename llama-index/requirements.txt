@@ -1,3 +1,2 @@
 llama_index
-langchain
 chainlit
