@@ -1,6 +1,6 @@
 ---
 title: 'PDF Question & Answering'
-tags: ['pdf', 'q&a]
+tags: ['pdf', 'q&a']
 ---
 
 # PDF Question & Answering
