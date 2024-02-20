@@ -39,22 +39,11 @@ Short and concise analysis:
 @cl.step(type="llm")
 async def gen_query(human_query: str):
     current_step = cl.context.current_step
-    current_step.generation = cl.ChatGeneration(
-        provider=ChatOpenAI.id,
-        messages=[
-            cl.GenerationMessage(
-                role="user",
-                template=sql_query_prompt,
-                formatted=sql_query_prompt.format(input=human_query),
-            )
-        ],
-        settings=settings,
-        inputs={"input": human_query},
-    )
+
 
     # Call OpenAI and stream the message
     stream_resp = await openai_client.chat.completions.create(
-        messages=[m.to_openai() for m in current_step.generation.messages],
+        messages=[{"role": "user", "content": human_query}],
         stream=True,
         **settings
     )
@@ -64,7 +53,6 @@ async def gen_query(human_query: str):
             await current_step.stream_token(token)
 
     current_step.language = "sql"
-    current_step.generation.completion = current_step.output
 
     return current_step.output
 
@@ -88,25 +76,13 @@ async def execute_query(query):
 async def analyze(table):
     current_step = cl.context.current_step
     today = str(date.today())
-    current_step.generation = cl.ChatGeneration(
-        provider=ChatOpenAI.id,
-        messages=[
-            cl.GenerationMessage(
-                role="user",
-                template=explain_query_result_prompt,
-                formatted=explain_query_result_prompt.format(date=today, table=table),
-            )
-        ],
-        settings=settings,
-        inputs={"date": today, "table": table},
-    )
 
     final_answer = cl.Message(content="")
     await final_answer.send()
 
     # Call OpenAI and stream the message
     stream = await openai_client.chat.completions.create(
-        messages=[m.to_openai() for m in current_step.generation.messages],
+        messages=[{"role": "user", "content": explain_query_result_prompt.format(date=today, table=table)}],
         stream=True,
         **settings
     )
@@ -121,7 +97,6 @@ async def analyze(table):
     await final_answer.update()
 
     current_step.output = final_answer.content
-    current_step.generation.completion = final_answer.content
 
     return current_step.output
 

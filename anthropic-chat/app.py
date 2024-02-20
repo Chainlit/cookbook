@@ -40,12 +40,7 @@ async def call_claude(query: str):
         token = data.completion
         await cl.context.current_step.stream_token(token)
 
-    cl.context.current_step.generation = cl.CompletionGeneration(
-        formatted=prompt,
-        completion=cl.context.current_step.output,
-        settings=settings,
-        provider=Anthropic.id,
-    )
+
 
     cl.user_session.set("prompt_history", prompt + cl.context.current_step.output)
 

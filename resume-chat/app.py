@@ -37,6 +37,13 @@ def setup_runnable():
 def auth():
     return cl.User(identifier="test")
 
+@cl.oauth_callback
+def auth_callback(provider_id: str, token: str, raw_user_data, default_app_user):
+    if provider_id == "google":
+        if "@chainlit.io" in raw_user_data["email"]:
+            return default_app_user
+    return None
+
 
 @cl.on_chat_start
 async def on_chat_start():
@@ -48,6 +55,7 @@ async def on_chat_start():
 async def on_chat_resume(thread: ThreadDict):
     memory = ConversationBufferMemory(return_messages=True)
     root_messages = [m for m in thread["steps"] if m["parentId"] == None]
+    print("root_messages", root_messages)
     for message in root_messages:
         if message["type"] == "USER_MESSAGE":
             memory.chat_memory.add_user_message(message["output"])

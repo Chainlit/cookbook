@@ -88,17 +88,6 @@ async def call_gpt4(message_history):
         "temperature": 0,
     }
 
-    cl.context.current_step.generation = cl.ChatGeneration(
-        provider="openai-chat",
-        messages=[
-            cl.GenerationMessage(
-                formatted=m["content"], name=m.get("name"), role=m["role"]
-            )
-            for m in message_history
-        ],
-        settings=settings,
-    )
-
     stream = await client.chat.completions.create(
         messages=message_history, stream=True, **settings
     )
@@ -129,7 +118,6 @@ async def call_gpt4(message_history):
                 await final_answer.send()
             await final_answer.stream_token(new_delta.content)
 
-    cl.context.current_step.generation.completion = cl.context.current_step.output
 
     if tool_call_id:
         cl.context.current_step.output = stringify_function_call(function_output)
