@@ -1,0 +1,8 @@
+langchain
+chainlit
+langchain_openai
+openai
+tiktoken
+pymupdf
+pinecone-client
+langchain_pinecone
