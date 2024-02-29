@@ -4,6 +4,8 @@ from chainlit.playground.providers import ChatOpenAI
 import chainlit as cl
 
 client = AsyncOpenAI()
+
+# Instrument the OpenAI client
 cl.instrument_openai()
 
 settings = {
@@ -12,16 +14,17 @@ settings = {
     # ... more settings
 }
 
-# @cl.step(type="llm")
 async def call_llm(input):
     response = await client.chat.completions.create(
         messages=[
-            cl.GenerationMessage(
-                content="You are a helpful bot, you always reply in Spanish", role="system"
-            ),
-            cl.GenerationMessage(
-                content=input, role="user"
-            ),
+            {
+                "content": "You are a helpful bot, you always reply in Spanish",
+                "role": "system"
+            },
+            {
+                "content": input,
+                "role": "user"
+            }
         ],
         **settings
     )
@@ -34,7 +37,3 @@ async def on_message(message: cl.Message):
     response = await call_llm(message.content)
     await cl.Message(content=response).send()
 
-# @cl.on_chat_start
-# async def on_chat_start():
-#     response = await call_llm("What is the weather like in San Francisco?")
-#     await cl.Message(content=response).send()
