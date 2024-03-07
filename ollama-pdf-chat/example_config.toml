@@ -1,0 +1,99 @@
+[project]
+# Whether to enable telemetry (default: true). No personal data is collected.
+enable_telemetry = false
+
+
+# List of environment variables to be provided by each user to use the app.
+user_env = []
+
+# Duration (in seconds) during which the session is saved when the connection is lost
+session_timeout = 3600
+
+# Enable third parties caching (e.g LangChain cache)
+cache = true
+
+# Authorized origins 
+allow_origins = ["*"]
+
+# Follow symlink for asset mount (see https://github.com/Chainlit/chainlit/issues/317)
+# follow_symlink = false
+
+[features]
+# Show the prompt playground
+prompt_playground = true
+
+# Process and display HTML in messages. This can be a security risk (see https://stackoverflow.com/questions/19603097/why-is-it-dangerous-to-render-user-generated-html-or-javascript)
+unsafe_allow_html = false
+
+# Process and display mathematical expressions. This can clash with "$" characters in messages.
+latex = false
+
+# Authorize users to upload files with messages
+multi_modal = true
+
+# Allows user to use speech to text
+[features.speech_to_text]
+    enabled = false
+    # See all languages here https://github.com/JamesBrill/react-speech-recognition/blob/HEAD/docs/API.md#language-string
+    # language = "en-US"
+
+[UI]
+# Name of the app and chatbot.
+name = "Ollama-PDF-Chat"
+
+# Show the readme while the thread is empty.
+show_readme_as_default = false
+
+# Description of the app and chatbot. This is used for HTML tags.
+description = "This is a Ollama based chatbot built to chat with PDFs and Textfiles in offline"
+
+# Large size content are by default collapsed for a cleaner ui
+default_collapse_content = true
+
+# The default value for the expand messages settings.
+default_expand_messages = false
+
+# Hide the chain of thought details from the user in the UI.
+hide_cot = false
+
+# Link to your github repo. This will add a github button in the UI's header.
+github = "https://github.com/KTS-o7/RVChat"
+
+# Specify a CSS file that can be used to customize the user interface.
+# The CSS file can be served from the public directory or via an external link.
+# custom_css = "/public/test.css"
+
+# Specify a Javascript file that can be used to customize the user interface.
+# The Javascript file can be served from the public directory.
+# custom_js = "/public/test.js"
+
+# Specify a custom font url.
+# custom_font = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+
+# Override default MUI light theme. (Check theme.ts)
+[UI.theme]
+    #font_family = "Inter, sans-serif"
+[UI.theme.light]
+    #background = "#FAFAFA"
+    #paper = "#FFFFFF"
+
+    [UI.theme.light.primary]
+        main = "#3f51b5"  # Indigo blue
+        dark = "#303f9f"  # Dark indigo blue
+        light = "#c5cae9"  # Light indigo blue
+
+# Override default MUI dark theme. (Check theme.ts)
+[UI.theme.dark]
+    #background = "#FAFAFA"
+    #paper = "#FFFFFF"
+
+    [UI.theme.dark.primary]
+        main = "#9fa8da"  # Lighter indigo blue
+        dark = "#7986cb"  # Lighter dark indigo blue
+        light = "#e8eaf6"  # Lighter light indigo blue
+
+
+
+
+[meta]
+generated_by = "1.0.301"
