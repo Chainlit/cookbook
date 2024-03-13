@@ -1,5 +1,5 @@
-from azure_ad_b2c_oauthprovider import AzureADB2COAuthProvider
-from inject_custom_auth import add_custom_oauth_provider
+from cookbook.auth.azure_ad_b2c_oauthprovider import AzureADB2COAuthProvider
+from cookbook.auth.inject_custom_auth import add_custom_oauth_provider
 
 add_custom_oauth_provider("azure-ad-b2c", AzureADB2COAuthProvider())
 
