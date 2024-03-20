@@ -1,6 +1,6 @@
 from operator import itemgetter
 
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import Runnable, RunnablePassthrough, RunnableLambda
@@ -49,7 +49,7 @@ async def on_chat_resume(thread: ThreadDict):
     memory = ConversationBufferMemory(return_messages=True)
     root_messages = [m for m in thread["steps"] if m["parentId"] == None]
     for message in root_messages:
-        if message["type"] == "USER_MESSAGE":
+        if message["type"] == "user_message":
             memory.chat_memory.add_user_message(message["output"])
         else:
             memory.chat_memory.add_ai_message(message["output"])
