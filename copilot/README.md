@@ -3,11 +3,6 @@
 Run the chainlit application:
 
 ```shell
-chainlit run app.py -h
+chainlit run app.py
 ```
-
-Serve the `index.html` file:
-
-```shell
-npx http-server
-```
+This demo uses the custom build feature to serve the frontend through chainlit, although you can serve it through any other server.
