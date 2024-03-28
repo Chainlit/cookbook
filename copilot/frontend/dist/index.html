@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+</head>
+
+<body>
+  <h1>Chainlit Copilot Test</h1>
+  <script src="http://localhost:8000/copilot/index.js"></script>
+  <script>
+    window.mountChainlitWidget({
+      chainlitServer: "http://localhost:8000",
+    });
+    window.addEventListener("chainlit-call-fn", (e) => {
+      const { name, args, callback } = e.detail;
+      if (name === "test") {
+        callback("You sent: " + args.msg);
+      }
+    });
+  </script>
+</body>
+
+</html>
