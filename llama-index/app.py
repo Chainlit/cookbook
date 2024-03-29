@@ -11,6 +11,9 @@ from llama_index.core import (
 )
 from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.service_context import ServiceContext
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
@@ -33,7 +36,8 @@ async def start():
     Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
     Settings.context_window = 4096
 
-    query_engine = index.as_query_engine(streaming=True, similarity_top_k=2)
+    service_context = ServiceContext.from_defaults(callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]))
+    query_engine = index.as_query_engine(streaming=True, similarity_top_k=2, service_context=service_context)
     cl.user_session.set("query_engine", query_engine)
 
     await cl.Message(
