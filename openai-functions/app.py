@@ -11,6 +11,8 @@ client = AsyncOpenAI(api_key=api_key)
 
 MAX_ITER = 5
 
+cl.instrument_openai()
+
 
 # Example dummy function hard coded to return the same weather
 # In production, this could be your backend API or an external API
@@ -93,17 +95,6 @@ async def call_gpt4(message_history):
         "tool_choice": "auto",
     }
 
-    cl.context.current_step.generation = cl.ChatGeneration(
-        provider="openai-chat",
-        messages=[
-            cl.GenerationMessage(
-                content=m["content"], name=m.get("name", "function"), role=m["role"]
-            )
-            for m in message_history
-        ],
-        settings=settings,
-    )
-
     response = await client.chat.completions.create(
         messages=message_history, **settings
     )
@@ -115,13 +106,11 @@ async def call_gpt4(message_history):
             await call_tool(tool_call, message_history)
 
     if message.content:
-        cl.context.current_step.generation.completion = message.content
         cl.context.current_step.output = message.content
 
     elif message.tool_calls:
         completion = stringify_function_call(message.tool_calls[0].function)
 
-        cl.context.current_step.generation.completion = completion
         cl.context.current_step.language = "json"
         cl.context.current_step.output = completion
 
