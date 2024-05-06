@@ -142,6 +142,8 @@ async def on_audio_end(elements: list[ElementBased]):
         elements=[input_audio_el, *elements]
     ).send()
     
+    answer_message = await cl.Message(content="").send()
+    
     whisper_input = (audio_buffer.name, audio_file, audio_mime_type)
     transcription = await speech_to_text(whisper_input)
 
@@ -158,7 +160,6 @@ async def on_audio_end(elements: list[ElementBased]):
         content=output_audio,
     )
     
-    await cl.Message(
-        content="",
-        elements=[output_audio_el]
-    ).send()
+    answer_message.elements = [output_audio_el]
+    await answer_message.update()
+
