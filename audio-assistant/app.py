@@ -121,8 +121,10 @@ async def on_audio_chunk(chunk: cl.AudioChunk):
         cl.user_session.set("audio_buffer", buffer)
         cl.user_session.set("audio_mime_type", chunk.mimeType)
 
-    # TODO: Transcribing chunks as they arrive would decrease latency
-    # Instead we write the chunks to a buffer and transcribe the whole audio at the end for now
+    # TODO: Use Gladia to transcribe chunks as they arrive would decrease latency
+    # see https://docs-v1.gladia.io/reference/live-audio
+    
+    # For now, write the chunks to a buffer and transcribe the whole audio at the end
     cl.user_session.get("audio_buffer").write(chunk.data)
 
 
