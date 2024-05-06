@@ -8,6 +8,8 @@ from openai import AsyncOpenAI
 from chainlit.element import ElementBased
 import chainlit as cl
 
+cl.instrument_openai()
+
 client = AsyncOpenAI()
 
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
