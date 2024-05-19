@@ -33,9 +33,10 @@ Install the required Python packages specified in `requirements.txt`.
 pip install -r requirements.txt
 ```
 
-2. **Process PDFs:**
+2. **Set up Application:**
 
-Place your PDF documents in the `./pdfs` directory.
+* Create a `.env` file based on the `.env.example` (e.g. with your `OPENAI_API_KEY`).
+* Place your PDF documents in the `./pdfs` directory.
 
 3. **Run the Application:**
 
