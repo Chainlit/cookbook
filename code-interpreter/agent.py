@@ -1,7 +1,9 @@
-import json, base64
+import json
+import base64
 
 import ast
-import os, asyncio
+import os
+import asyncio
 from openai import AsyncOpenAI
 from e2b_code_interpreter import CodeInterpreter
 import chainlit as cl
@@ -24,50 +26,58 @@ SYSTEM_PROMPT = """you are a python data scientist. you are given tasks to compl
 
 
 TOOLS = [
-  {
-    "type": "function",
-      "function": {
-        "name": "execute_python",
-        "description": "Execute python code in a Jupyter notebook cell and returns any result, stdout, stderr, display_data, and error.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "code": {
-              "type": "string",
-              "description": "The python code to execute in a single cell.",
-            }
-          },
-          "required": ["code"],
+    {
+        "type": "function",
+        "function": {
+            "name": "execute_python",
+            "description": "Execute python code in a Jupyter notebook cell and returns any result, stdout, stderr, display_data, and error.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "The python code to execute in a single cell.",
+                    }
+                },
+                "required": ["code"],
+            },
         },
-      },
-  }
+    }
 ]
 
+
 class DataAgent:
+    # Stateful
 
     def __init__(self, sandbox=None) -> None:
-        
+
         self.settings = {
             "model": "gpt-4",
             "tools": TOOLS,
             "tool_choice": "auto",
             "temperature": 0,
         }
-        self.SYSTEM_PROMPT = SYSTEM_PROMPT
         if not sandbox:
             sandbox = CodeInterpreter()
         self.sandbox = sandbox
+        self.ai_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     async def close(self):
         self.sandbox.close()
 
-    async def save_files(self, files):
+    async def upload_files(self, files):
         for file in files:
             file_path = file.path
             with open(file_path, "rb") as f:
                 remote_path = self.sandbox.upload_file(f)
+                self.ai_messages.append({"role": "system", "content": f"User uploaded the file {remote_path}"})
+    
+    async def add_messages(self, messages, to_ui=True):
+        self.ai_messages.append(messages)
+        if to_ui:
+            await cl.Message(messages).send()
 
-
+    @cl.Step(type="tool")
     async def execute_python(self, code):
         print("Running code interpreter...")
         exec = await asyncio.to_thread(
@@ -83,23 +93,32 @@ class DataAgent:
             if format == "image/png":
                 with open("image.png", "wb") as f:
                     f.write(base64.b64decode(data))
+                    # markdown links to url.
     
         if exec.error:
             print("[Code Interpreter ERROR]", exec.error)
         else:
-            print("\n HELLOOOOOO \n", exec.results[0].__dict__)
+            print("\n ELSE \n", exec.results[0].__dict__)
             return exec.results[0].__dict__["text"]
 
-    async def run(self, messages) -> cl.Step:
-        # TODO: add system message.
+    async def run(self, message: cl.Message) -> cl.Step:
+
+        if not message.elements:
+            await cl.Message(content="No file attached").send()
+            return
+
+        await self.save_files(message.elements)
+
+        ### ------------------- ###
+        self.ai_messages.append({"role": "user", "content": message.content})
+        
         cur_iter = 0
         while cur_iter < MAX_ITER:
-            
+
             response = await client.chat.completions.create(
-                messages=messages, **self.settings
+                messages=self.ai_messages, **self.settings
             )
-            print("\n\n",response, "\n\n")
-            messages.append(response.choices[0].message)
+            self.ai_messages.append(response.choices[0].message)
             tool_calls = response.choices[0].message.tool_calls
 
             if tool_calls:
@@ -126,17 +145,13 @@ class DataAgent:
                 )
 
                 # Extend conversation with all function responses
-                messages.extend(function_responses)
+                self.ai_messages.extend(function_responses)
             else:
                 break
 
             cur_iter += 1
 
-        return messages
-
-
-
-
+        return self.ai_messages
 
 
 # dataagent = DataAgent()

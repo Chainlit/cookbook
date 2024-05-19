@@ -14,15 +14,9 @@ async def on_start():
 
 @cl.on_message
 async def main(message: cl.Message):
-    if not message.elements:
-        await cl.Message(content="No file attached").send()
-        return
-
     agent : DataAgent = cl.user_session.get("agent")
-    await agent.save_files(message.elements)
 
-    # TODO
-    await agent.run()
+    await agent.run(message=message)
 
     await cl.Message(content=f"Received and uploaded {len(message.elements)} file(s) to the sandbox").send()
 
