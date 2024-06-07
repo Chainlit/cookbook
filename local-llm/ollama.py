@@ -4,21 +4,10 @@ from langchain.schema import StrOutputParser
 from langchain.schema.runnable import Runnable
 from langchain.schema.runnable.config import RunnableConfig
 
-from chainlit.playground.config import add_llm_provider
-from chainlit.playground.providers.langchain import LangchainGenericProvider
 import chainlit as cl
 
 model = Ollama(
     model="llama2",
-)
-
-add_llm_provider(
-    LangchainGenericProvider(
-        id=model._llm_type,
-        name="Llama 2",
-        llm=model,
-        is_chat=False,
-    )
 )
 
 

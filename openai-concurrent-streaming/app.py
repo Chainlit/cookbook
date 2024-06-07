@@ -28,15 +28,6 @@ async def start_chat():
             }
         ],
     )
-    await cl.Avatar(
-        name="Gilfoyle",
-        url="https://static.wikia.nocookie.net/silicon-valley/images/2/20/Bertram_Gilfoyle.jpg",
-    ).send()
-    await cl.Avatar(
-        name="Dinesh",
-        url="https://static.wikia.nocookie.net/silicon-valley/images/e/e3/Dinesh_Chugtai.jpg",
-    ).send()
-
 
 async def answer_as(name):
     message_history = cl.user_session.get("message_history")

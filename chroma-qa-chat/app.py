@@ -112,14 +112,13 @@ async def on_message(message: cl.Message):
                     cl.Text(name="Sources", content=sources_text, display="inline")
                 )
 
-    async with cl.Step(type="run", name="QA Assistant"):
-        async for chunk in runnable.astream(
-            message.content,
-            config=RunnableConfig(callbacks=[
-                cl.LangchainCallbackHandler(),
-                PostMessageHandler(msg)
-            ]),
-        ):
-            await msg.stream_token(chunk)
+    async for chunk in runnable.astream(
+        message.content,
+        config=RunnableConfig(callbacks=[
+            cl.LangchainCallbackHandler(),
+            PostMessageHandler(msg)
+        ]),
+    ):
+        await msg.stream_token(chunk)
 
     await msg.send()

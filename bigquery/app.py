@@ -4,7 +4,6 @@ from openai import AsyncOpenAI
 from google.cloud import bigquery
 
 import chainlit as cl
-from chainlit.playground.providers.openai import ChatOpenAI
 
 # Set up BigQuery client
 client = bigquery.Client(location="EU")
@@ -36,25 +35,20 @@ Short and concise analysis:
 """
 
 
-@cl.step(type="llm")
+@cl.step(type="tool")
 async def gen_query(human_query: str):
     current_step = cl.context.current_step
-    current_step.generation = cl.ChatGeneration(
-        provider=ChatOpenAI.id,
-        messages=[
-            cl.GenerationMessage(
-                role="user",
-                template=sql_query_prompt,
-                formatted=sql_query_prompt.format(input=human_query),
-            )
-        ],
-        settings=settings,
-        inputs={"input": human_query},
-    )
+
+    messages = [
+        {
+            "role": "user",
+            "content": sql_query_prompt.format(input=human_query),
+        }
+    ]
 
     # Call OpenAI and stream the message
     stream_resp = await openai_client.chat.completions.create(
-        messages=[m.to_openai() for m in current_step.generation.messages],
+        messages=messages,
         stream=True,
         **settings
     )
@@ -64,12 +58,11 @@ async def gen_query(human_query: str):
             await current_step.stream_token(token)
 
     current_step.language = "sql"
-    current_step.generation.completion = current_step.output
 
     return current_step.output
 
 
-@cl.step
+@cl.step(type="tool")
 async def execute_query(query):
     # Execute the SQL query
     query_job = client.query(query)
@@ -84,29 +77,23 @@ async def execute_query(query):
     return markdown_table
 
 
-@cl.step(type="llm")
+@cl.step(type="tool")
 async def analyze(table):
     current_step = cl.context.current_step
     today = str(date.today())
-    current_step.generation = cl.ChatGeneration(
-        provider=ChatOpenAI.id,
-        messages=[
-            cl.GenerationMessage(
-                role="user",
-                template=explain_query_result_prompt,
-                formatted=explain_query_result_prompt.format(date=today, table=table),
-            )
-        ],
-        settings=settings,
-        inputs={"date": today, "table": table},
-    )
+    
+    messages = [
+        {
+            "role": "user",
+            "content": explain_query_result_prompt.format(date=today, table=table)
+        }
+    ]
 
-    final_answer = cl.Message(content="")
-    await final_answer.send()
+    final_answer = await cl.Message(content="").send()
 
     # Call OpenAI and stream the message
     stream = await openai_client.chat.completions.create(
-        messages=[m.to_openai() for m in current_step.generation.messages],
+        messages=messages,
         stream=True,
         **settings
     )
@@ -121,7 +108,6 @@ async def analyze(table):
     await final_answer.update()
 
     current_step.output = final_answer.content
-    current_step.generation.completion = final_answer.content
 
     return current_step.output
 

@@ -1,0 +1,3 @@
+openai
+plotly
+chainlit==1.1.300rc4

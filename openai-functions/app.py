@@ -3,7 +3,6 @@ import ast
 import os
 from openai import AsyncOpenAI
 
-from chainlit.playground.providers.openai import stringify_function_call
 import chainlit as cl
 
 api_key = os.environ.get("OPENAI_API_KEY")
@@ -87,7 +86,6 @@ async def call_tool(tool_call, message_history):
     )
 
 
-@cl.step(type="llm")
 async def call_gpt4(message_history):
     settings = {
         "model": "gpt-4",
@@ -109,7 +107,7 @@ async def call_gpt4(message_history):
         cl.context.current_step.output = message.content
 
     elif message.tool_calls:
-        completion = stringify_function_call(message.tool_calls[0].function)
+        completion = message.tool_calls[0].function
 
         cl.context.current_step.language = "json"
         cl.context.current_step.output = completion

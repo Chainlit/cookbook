@@ -1,7 +1,6 @@
 import os
 import anthropic
 import chainlit as cl
-from chainlit.playground.providers import Anthropic
 
 c = anthropic.AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
@@ -12,13 +11,8 @@ async def start_chat():
         "prompt_history",
         "",
     )
-    await cl.Avatar(
-        name="Claude",
-        url="https://www.anthropic.com/images/icons/apple-touch-icon.png",
-    ).send()
 
 
-@cl.step(name="Claude", type="llm", root=True)
 async def call_claude(query: str):
     prompt_history = cl.user_session.get("prompt_history")
 
@@ -29,6 +23,8 @@ async def call_claude(query: str):
         "max_tokens_to_sample": 1000,
         "model": "claude-2.0",
     }
+    
+    msg = cl.Message(content="", author="Claude")
 
     stream = await c.completions.create(
         prompt=prompt,
@@ -38,16 +34,10 @@ async def call_claude(query: str):
 
     async for data in stream:
         token = data.completion
-        await cl.context.current_step.stream_token(token)
+        await msg.stream_token(token)
 
-    cl.context.current_step.generation = cl.CompletionGeneration(
-        formatted=prompt,
-        completion=cl.context.current_step.output,
-        settings=settings,
-        provider=Anthropic.id,
-    )
-
-    cl.user_session.set("prompt_history", prompt + cl.context.current_step.output)
+    await msg.send()
+    cl.user_session.set("prompt_history", prompt + msg.content)
 
 
 @cl.on_message
