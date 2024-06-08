@@ -8,10 +8,10 @@ import {
 import { Playground } from "./components/playground";
 import { useRecoilValue } from "recoil";
 
-const CHAINLIT_SERVER = "http://localhost:8000";
+const CHAINLIT_SERVER = "http://localhost:80/chainlit";
 const userEnv = {};
 
-const apiClient = new ChainlitAPI(CHAINLIT_SERVER, "app");
+const apiClient = new ChainlitAPI(CHAINLIT_SERVER, "webapp");
 
 function App() {
   const { connect } = useChatSession();
@@ -20,7 +20,7 @@ function App() {
     if (session?.socket.connected) {
       return;
     }
-    fetch(apiClient.buildEndpoint("/custom-auth"))
+    fetch("http://localhost:80/custom-auth")
       .then((res) => {
         return res.json();
       })
