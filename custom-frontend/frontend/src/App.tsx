@@ -1,17 +1,10 @@
 import { useEffect } from "react";
 
-import {
-  ChainlitAPI,
-  sessionState,
-  useChatSession,
-} from "@chainlit/react-client";
+import { sessionState, useChatSession } from "@chainlit/react-client";
 import { Playground } from "./components/playground";
 import { useRecoilValue } from "recoil";
 
-const CHAINLIT_SERVER = "http://localhost:80/chainlit";
 const userEnv = {};
-
-const apiClient = new ChainlitAPI(CHAINLIT_SERVER, "webapp");
 
 function App() {
   const { connect } = useChatSession();
@@ -26,7 +19,6 @@ function App() {
       })
       .then((data) => {
         connect({
-          client: apiClient,
           userEnv,
           accessToken: `Bearer: ${data.token}`,
         });

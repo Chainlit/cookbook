@@ -23,5 +23,4 @@ async def custom_auth():
     token = create_jwt(User(identifier="Test User"))
     return JSONResponse({"token": token})
 
-
 mount_chainlit(app=app, target="cl_app.py", path="/chainlit")
