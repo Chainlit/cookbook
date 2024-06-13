@@ -4,7 +4,8 @@ import os
 from openai import AsyncOpenAI
 
 import chainlit as cl
-from chainlit.playground.providers.openai import stringify_function_call
+
+cl.instrument_openai()
 
 api_key = os.environ.get("OPENAI_API_KEY")
 client = AsyncOpenAI(api_key=api_key)
@@ -78,8 +79,6 @@ async def call_tool(tool_call_id, name, arguments, message_history):
         }
     )
 
-
-@cl.step(type="llm")
 async def call_gpt4(message_history):
     settings = {
         "model": "gpt-3.5-turbo",
@@ -87,17 +86,6 @@ async def call_gpt4(message_history):
         "tool_choice": "auto",
         "temperature": 0,
     }
-
-    cl.context.current_step.generation = cl.ChatGeneration(
-        provider="openai-chat",
-        messages=[
-            cl.GenerationMessage(
-                formatted=m["content"], name=m.get("name"), role=m["role"]
-            )
-            for m in message_history
-        ],
-        settings=settings,
-    )
 
     stream = await client.chat.completions.create(
         messages=message_history, stream=True, **settings
@@ -120,20 +108,12 @@ async def call_gpt4(message_history):
                 function_output["name"] = function.name
             else:
                 function_output["arguments"] += function.arguments
-            await cl.context.current_step.stream_token(
-                json.dumps(function_output), is_sequence=True
-            )
         if new_delta.content:
-            await cl.context.current_step.stream_token(new_delta.content)
             if not final_answer.content:
                 await final_answer.send()
             await final_answer.stream_token(new_delta.content)
 
-    cl.context.current_step.generation.completion = cl.context.current_step.output
-
     if tool_call_id:
-        cl.context.current_step.output = stringify_function_call(function_output)
-        cl.context.current_step.language = "json"
         await call_tool(
             tool_call_id,
             function_output["name"],

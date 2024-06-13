@@ -4,9 +4,6 @@ from langchain.chains import ConversationChain
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 
 import chainlit as cl
-from chainlit.playground.config import add_llm_provider
-from chainlit.playground.providers.langchain import LangchainGenericProvider
-
 
 # Download the file here https://huggingface.co/TheBloke/Yarn-Llama-2-7B-128K-GGUF/tree/main
 # and update the path
@@ -33,11 +30,6 @@ def instantiate_llm():
 
 
 llm = instantiate_llm()
-
-add_llm_provider(
-    LangchainGenericProvider(id=llm._llm_type, name="Llama-cpp", llm=llm, is_chat=False)
-)
-
 
 @cl.on_chat_start
 def main():

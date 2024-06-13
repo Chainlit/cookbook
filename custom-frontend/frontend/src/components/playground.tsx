@@ -17,12 +17,10 @@ export function Playground() {
   const handleSendMessage = () => {
     const content = inputValue.trim();
     if (content) {
-      const message: IStep = {
-        id: uuidv4(),
+      const message = {
         name: "user",
-        type: "user_message",
+        type: "user_message" as const,
         output: content,
-        createdAt: new Date().toISOString(),
       };
       sendMessage(message, []);
       setInputValue("");

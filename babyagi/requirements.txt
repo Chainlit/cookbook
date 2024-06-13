@@ -1,3 +1,0 @@
-chainlit
-chromadb==0.3.26
-tiktoken==0.4.0

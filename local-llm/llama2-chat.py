@@ -6,9 +6,6 @@ import transformers
 import torch
 
 import chainlit as cl
-from chainlit.playground.config import add_llm_provider
-from chainlit.playground.providers.langchain import LangchainGenericProvider
-
 
 template = """
 You are a helpful AI assistant. Provide the answer for the following question:
@@ -49,12 +46,6 @@ def load_llama():
 
 
 llm = load_llama()
-
-add_llm_provider(
-    LangchainGenericProvider(
-        id=llm._llm_type, name="Llama2-chat", llm=llm, is_chat=False
-    )
-)
 
 
 @cl.on_chat_start

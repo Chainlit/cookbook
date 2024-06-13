@@ -1,0 +1,18 @@
+# Exported from Render on 2024-05-20T20:56:35Z
+services:
+  - type: web
+    name: Chainlit-Data-Analyst
+    runtime: python
+    repo: https://github.com/willydouhard/data-analyst
+    plan: starter
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_ASSISTANT_ID
+        sync: false
+      - key: LITERAL_API_KEY
+        sync: false
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: chainlit run app.py -h --port $PORT
+version: "1"

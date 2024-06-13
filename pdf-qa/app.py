@@ -69,10 +69,6 @@ def get_docsearch(file: AskFileResponse):
 
 @cl.on_chat_start
 async def start():
-    await cl.Avatar(
-        name="Chatbot",
-        url="https://avatars.githubusercontent.com/u/128686189?s=400&u=a1d1553023f8ea0921fba0debbe92a8c5f840dd9&v=4",
-    ).send()
     files = None
     while files is None:
         files = await cl.AskFileMessage(
