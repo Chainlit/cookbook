@@ -1,4 +1,4 @@
-from langchain.chains import LLMMathChain
+from langchain.chains.llm_math.base import LLMMathChain
 from langchain.agents import initialize_agent, Tool, AgentType, AgentExecutor
 from langchain_community.chat_models import ChatOpenAI
 from typing import *

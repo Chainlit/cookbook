@@ -1,7 +1,6 @@
 Title: Human-In-The-Loop Tool
 Tags: [human-interaction]
 
-
 ## Ask Human
 
 The `Ask Human` script is designed to integrate human input into automated workflows. It allows a Python application to pause its execution and query the end-user for additional information or guidance, effectively creating a human-in-the-loop system.
@@ -23,27 +22,27 @@ To get started with the `Ask Human` tool, follow these steps:
 5. Implement the `main` function to handle incoming messages and execute the agent with the human input tool.
 
 Here's a simple example of how to define the `HumanInputChainlit` tool:
-    
+
 ```python
 class HumanInputChainlit(BaseTool):
-"""Tool that adds the capability to ask user for input."""
+    """Tool that adds the capability to ask user for input."""
 
-name = "human"
-description = (
-"You can ask a human for guidance when you think you "
-"got stuck or you are not sure what to do next. "
-"The input should be a question for the human."
-)
+    name = "human"
+    description = (
+        "You can ask a human for guidance when you think you "
+        "got stuck or you are not sure what to do next. "
+        "The input should be a question for the human."
+    )
 
-def run(self, query: str, run_manager=None) -> str:
-"""Use the Human input tool."""
-res = run_sync(cl.AskUserMessage(content=query).send())
-return res["content"]
+    def run(self, query: str, run_manager=None) -> str:
+        """Use the Human input tool."""
+        res = run_sync(cl.AskUserMessage(content=query).send())
+        return res["content"]
 
-async def _arun(self, query: str, run_manager=None) -> str:
-"""Use the Human input tool."""
-res = await cl.AskUserMessage(content=query).send()
-return res["output"]
+    async def _arun(self, query: str, run_manager=None) -> str:
+        """Use the Human input tool."""
+        res = await cl.AskUserMessage(content=query).send()
+        return res["output"]
 ```
 
 To use the `Ask Human` tool in your application, simply instantiate the `HumanInputChainlit` class and include it in your agent's toolset.
