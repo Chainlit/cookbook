@@ -174,6 +174,14 @@ class MixtureOfAnswers(Workflow):
             """
         )
         
+        ## Update memory
+        self.history.append(
+            ChatMessage(
+                role = MessageRole.ASSISTANT,
+                content = "FINAL ANSWER: " + str(response)
+            )
+        )
+        
         return StopEvent(result = str(response))
         
 ### Define the app - with just a few lines of code
