@@ -21,12 +21,12 @@ from llama_index.llms.openai import OpenAI
 # )
 from llama_index.tools.tavily_research import TavilyToolSpec
 
-from typing import Optional, Annotated, List
+from typing import Optional, Annotated, List, Any
 
 llm = OpenAI(model="gpt-4o-mini")
 
 ### Define tools
-search_tool_spec = TavilyToolSpec(os.getenv("TAVILY"))
+search_tool_spec = TavilyToolSpec(api_key=os.getenv("TAVILY"))
 search_tools = search_tool_spec.to_tool_list()
 
 ### Define events
@@ -47,7 +47,9 @@ class ResponseEvent(Event):
 class MixtureOfAnswers(Workflow):
     def __init__(
         self, 
-        llm: Optional[LLM] = llm
+        *args: Any,
+        llm: Optional[LLM] = llm,
+        **kwargs: Any
     ):
         """Class constructor. Takes in an llm instance and constructs 
         1. A function calling agent with search tools
@@ -57,11 +59,13 @@ class MixtureOfAnswers(Workflow):
         Args:
             llm (Optional[LLM], optional): LLM instance. Defaults to Settings.llm.
         """
+        super().__init__(*args, **kwargs)
         self.llm = llm
-        self.search_agent = FunctionCallingAgentWorker(
+        self.search_agent_worker = FunctionCallingAgentWorker.from_tools(
             tools = search_tools,
             llm = self.llm
         )
+        self.search_agent = self.search_agent_worker.as_agent()
         self.answer_without_search_engine = SimpleChatEngine.from_defaults(
             llm = self.llm
         )
@@ -158,7 +162,7 @@ class MixtureOfAnswers(Workflow):
         if ready is None:
             return None
         
-        response = await self.llm.achat(
+        response = await self.llm.acomplete(
             f"""
             A user has asked us a question and we have responded accordingly using a 
             search tool and without using a search tool. Your job is to decide which 
@@ -187,7 +191,10 @@ class MixtureOfAnswers(Workflow):
 ### Define the app - with just a few lines of code
 @cl.on_chat_start
 async def on_chat_start():
-    app = MixtureOfAnswers()
+    app = MixtureOfAnswers(
+        verbose = True, 
+        timeout = 6000
+    ) #The app times out if it runs for 6000s without any result
     cl.user_session.set("app", app)
     await cl.Message("Hello! Ask me anything!").send()
     
