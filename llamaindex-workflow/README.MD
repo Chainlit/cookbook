@@ -20,7 +20,7 @@ chainlit run app.py --watch
 ```
 
 ## The app
-Our workflow application includes a function calling agent and a simple chat engine. When asked a question, the workflow triggers 2 events - a search online and answer event and a "simply answer" event without any searching. 
+Our workflow application includes a function calling agent and a simple chat engine. When asked a question, the workflow triggers 2 events: a search online and answer event and a "simply answer" event without any searching. We route to both events whenever we receive a StartEvent (i.e. whenever we receive a question).
 - The first event uses Tavily to do the online search, and the agent then extracts the search results to reply. 
 - The second event simply uses the LLM to reply without any searching. 
 
