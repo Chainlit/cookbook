@@ -15,9 +15,10 @@ from llama_index.core.workflow import (
     step
 )
 from llama_index.llms.openai import OpenAI
-from llama_index.utils.workflow import (
-    draw_all_possible_flows
-)
+## Utility function to draw out the workflow
+# from llama_index.utils.workflow import (
+#     draw_all_possible_flows
+# )
 from llama_index.tools.tavily_research import TavilyToolSpec
 
 from typing import Optional, Annotated, List
