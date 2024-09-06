@@ -18,7 +18,8 @@ def call_model(messages):
         headers={"Authorization": f"Api-Key {baseten_api_key}"},
         json={
             "messages": messages,
-            "max_tokens": 1024
+            "max_tokens": 1024,
+            "temperature": 0.7
         },
         stream=True
     )
@@ -69,6 +70,7 @@ async def main(message: cl.Message):
     is_thinking = False
     is_answering = False
 
+    # Todo: fix when answer is just <|start_header_id|>assistant<|end_header_id|>\n\n SOMETHING <|eot_id|>
     for chunk in call_model(message_history):
         raw_answer += chunk
         if raw_answer.endswith("<thinking>"):
@@ -87,9 +89,13 @@ async def main(message: cl.Message):
             await msg.stream_token(chunk)
             is_answering = False
             await msg.update()
-        elif chunk and (is_thinking or is_answering):
+        if chunk and (is_thinking or is_answering):
             await msg.stream_token(chunk)
 
+    raw_answer = raw_answer.replace("<|start_header_id|>assistant<|end_header_id|>\n\n", "")
+    raw_answer = raw_answer.replace("<|eot_id|>", "")
+
     message_history.append({"role": "assistant", "content": raw_answer})
+    
     # Update the session history
     cl.user_session.set("history", message_history)
