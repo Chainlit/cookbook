@@ -1,0 +1,4 @@
+chainlit
+openai
+yfinance
+plotly

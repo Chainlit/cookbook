@@ -68,7 +68,7 @@ class EventHandler(AsyncAssistantEventHandler):
 
     async def on_tool_call_created(self, tool_call):
         self.current_tool_call = tool_call.id
-        self.current_step = cl.Step(name=tool_call.type, type="tool")
+        self.current_step = cl.Step(name=tool_call.type, type="tool", parent_id=cl.context.current_run.id)
         self.current_step.show_input = "python"
         self.current_step.start = utc_now()
         await self.current_step.send()
@@ -76,7 +76,7 @@ class EventHandler(AsyncAssistantEventHandler):
     async def on_tool_call_delta(self, delta, snapshot): 
         if snapshot.id != self.current_tool_call:
             self.current_tool_call = snapshot.id
-            self.current_step = cl.Step(name=delta.type, type="tool")
+            self.current_step = cl.Step(name=delta.type, type="tool",  parent_id=cl.context.current_run.id)
             self.current_step.start = utc_now()
             if snapshot.type == "code_interpreter":
                  self.current_step.show_input = "python"
@@ -114,7 +114,7 @@ class EventHandler(AsyncAssistantEventHandler):
         self.current_step.end = utc_now()
         await self.current_step.update()
 
-    async def on_image_file_done(self, image_file, message):
+    async def on_image_file_done(self, image_file):
         image_id = image_file.file_id
         response = await async_openai_client.files.with_raw_response.content(image_id)
         image_element = cl.Image(
@@ -214,42 +214,3 @@ async def main(message: cl.Message):
         event_handler=EventHandler(assistant_name=assistant.name),
     ) as stream:
         await stream.until_done()
-
-
-@cl.on_audio_chunk
-async def on_audio_chunk(chunk: cl.AudioChunk):
-    if chunk.isStart:
-        buffer = BytesIO()
-        # This is required for whisper to recognize the file type
-        buffer.name = f"input_audio.{chunk.mimeType.split('/')[1]}"
-        # Initialize the session for a new audio stream
-        cl.user_session.set("audio_buffer", buffer)
-        cl.user_session.set("audio_mime_type", chunk.mimeType)
-
-    # Write the chunks to a buffer and transcribe the whole audio at the end
-    cl.user_session.get("audio_buffer").write(chunk.data)
-
-
-@cl.on_audio_end
-async def on_audio_end(elements: list[Element]):
-    # Get the audio buffer from the session
-    audio_buffer: BytesIO = cl.user_session.get("audio_buffer")
-    audio_buffer.seek(0)  # Move the file pointer to the beginning
-    audio_file = audio_buffer.read()
-    audio_mime_type: str = cl.user_session.get("audio_mime_type")
-
-    input_audio_el = cl.Audio(
-        mime=audio_mime_type, content=audio_file, name=audio_buffer.name
-    )
-    await cl.Message(
-        type="user_message",
-        content="",
-        elements=[input_audio_el, *elements],
-    ).send()
-
-    whisper_input = (audio_buffer.name, audio_file, audio_mime_type)
-    transcription = await speech_to_text(whisper_input)
-
-    msg = cl.Message(author="You", content=transcription, elements=elements)
-
-    await main(message=msg)
