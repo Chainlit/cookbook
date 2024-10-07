@@ -53,7 +53,7 @@ async def setup_openai_realtime():
     cl.user_session.set("openai_realtime", openai_realtime)
     coros = [openai_realtime.add_tool(tool_def, tool_handler) for tool_def, tool_handler in tools]
     await asyncio.gather(*coros)
-    
+
 
 @cl.on_chat_start
 async def start():
@@ -75,10 +75,10 @@ async def on_message(message: cl.Message):
 async def on_audio_start():
     try:
         openai_realtime: RealtimeClient = cl.user_session.get("openai_realtime")
-        # TODO: might want to recreate items to restore context
-        # openai_realtime.create_conversation_item(item)
         await openai_realtime.connect()
         logger.info("Connected to OpenAI realtime")
+        # TODO: might want to recreate items to restore context
+        # openai_realtime.create_conversation_item(item)
         return True
     except Exception as e:
         await cl.ErrorMessage(content=f"Failed to connect to OpenAI realtime: {e}").send()

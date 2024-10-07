@@ -47,18 +47,6 @@ def array_buffer_to_base64(array_buffer):
     
     return base64.b64encode(array_buffer).decode('utf-8')
 
-def merge_int16_arrays(left, right):
-    """
-    Merge two numpy arrays of int16.
-    :param left: numpy array of int16
-    :param right: numpy array of int16
-    :return: merged numpy array of int16
-    """
-    if isinstance(left, np.ndarray) and left.dtype == np.int16 and isinstance(right, np.ndarray) and right.dtype == np.int16:
-        return np.concatenate((left, right))
-    else:
-        raise ValueError("Both items must be numpy arrays of int16")
-
 
 class RealtimeEventHandler:
     def __init__(self):
@@ -341,8 +329,7 @@ class RealtimeConversation:
             return None, None
         array_buffer = base64_to_array_buffer(delta)
         append_values = array_buffer.tobytes()
-        # TODO: make it work
-        # item['formatted']['audio'] = merge_int16_arrays(item['formatted']['audio'], append_values)
+        item['formatted']['audio'] += [append_values]
         return item, {'audio': append_values}
 
     def _process_text_delta(self, event):
