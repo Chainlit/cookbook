@@ -1,8 +1,9 @@
 import chainlit as cl
 
 import os
+from dotenv import load_dotenv, find_dotenv
 
-from llama_index.core.agent import FunctionCallingAgentWorker
+from llama_index.core.agent import ReActAgent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.chat_engine import SimpleChatEngine
 from llama_index.core.llms import LLM
@@ -14,7 +15,7 @@ from llama_index.core.workflow import (
     StopEvent,
     step
 )
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.gemini import Gemini
 ## Utility function to draw out the workflow
 # from llama_index.utils.workflow import (
 #     draw_all_possible_flows
@@ -23,7 +24,9 @@ from llama_index.tools.tavily_research import TavilyToolSpec
 
 from typing import Optional, Annotated, List, Any
 
-llm = OpenAI(model="gpt-4o-mini")
+_ = load_dotenv(find_dotenv())
+
+llm = Gemini(model="models/gemini-1.5-flash-latest")
 
 ### Define tools
 search_tool_spec = TavilyToolSpec(api_key=os.getenv("TAVILY"))
@@ -44,6 +47,17 @@ class ResponseEvent(Event):
     answer: Annotated[str, "The LLM's response"]
 
 ### Define workfow
+class HashTagWorkflow(Workflow):
+    def __init__(self, *args: Any, **kwargs: Any):
+        self.llm = llm
+        super().__init__(*args, **kwargs)
+    
+    @cl.step(type="llm")
+    @step
+    async def generate_hashtag(self, ev: StartEvent) -> StopEvent:
+        response = await self.llm.acomplete(f"Generate 1-3 hashtags related to {ev.response}")
+        return StopEvent(str(response))
+
 class MixtureOfAnswers(Workflow):
     def __init__(
         self, 
@@ -61,11 +75,11 @@ class MixtureOfAnswers(Workflow):
         """
         super().__init__(*args, **kwargs)
         self.llm = llm
-        self.search_agent_worker = FunctionCallingAgentWorker.from_tools(
+        self.search_agent=ReActAgent.from_tools(
             tools = search_tools,
             llm = self.llm
         )
-        self.search_agent = self.search_agent_worker.as_agent()
+        # self.search_agent = self.search_agent_worker.as_agent()
         self.answer_without_search_engine = SimpleChatEngine.from_defaults(
             llm = self.llm
         )
@@ -151,7 +165,8 @@ class MixtureOfAnswers(Workflow):
     async def compile(
         self,
         ctx: Context,
-        ev: ResponseEvent
+        ev: ResponseEvent,
+        hashtag_workflow: Workflow = HashTagWorkflow()
     ) -> StopEvent:
         """Compiles and summarizes answers from all response events"""
         
@@ -178,15 +193,18 @@ class MixtureOfAnswers(Workflow):
             """
         )
         
+        ## Add hashtag
+        hashtag = await hashtag_workflow.run(response=str(response))
+        
         ## Update memory
         self.history.append(
             ChatMessage(
                 role = MessageRole.ASSISTANT,
-                content = "FINAL ANSWER: " + str(response)
+                content = "FINAL ANSWER: " + str(response) + str(hashtag)
             )
         )
         
-        return StopEvent(result = str(response))
+        return StopEvent(result = str(response) + str(hashtag))
         
 ### Define the app - with just a few lines of code
 @cl.on_chat_start
@@ -195,6 +213,7 @@ async def on_chat_start():
         verbose = True, 
         timeout = 6000
     ) #The app times out if it runs for 6000s without any result
+    app.add_workflows(hashtag_workflow = HashTagWorkflow(timeout=6000))
     cl.user_session.set("app", app)
     await cl.Message("Hello! Ask me anything!").send()
     
