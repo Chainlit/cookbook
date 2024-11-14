@@ -4,9 +4,9 @@ import chainlit as cl
 async def window_message(message: str):
     if message.startswith("Client: "):
         await cl.Message(content=f"Window message received: {message}").send()
-        cl.send_window_message(f"Server: Window message received: {message}")
+        await cl.send_window_message(f"Server: Window message received: {message}")
 
 @cl.on_message
 async def on_message(msg: cl.Message):
     await cl.Message(content=f"Normal message received: {msg.content}").send()
-    cl.send_window_message(f"Server: Normal message received: {msg.content}")
+    await cl.send_window_message(f"Server: Normal message received: {msg.content}")
