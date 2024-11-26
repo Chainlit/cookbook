@@ -1,0 +1,14 @@
+﻿azure-core==1.29.7
+azure-search-documents==11.6.0b4
+chainlit==1.2.0
+langchain==0.3.1
+langchain-community==0.3.1
+langchain-openai==0.2.1
+langchain-unstructured==0.1.5
+requests==2.31.0
+aiofiles==23.2.1
+aiohttp==3.9.3
+aiohttp_retry==2.8.3
+async-timeout==4.0.3
+azure-identity==1.17.1
+azure-ai-documentintelligence==1.0.0b1
