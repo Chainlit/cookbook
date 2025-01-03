@@ -1,4 +1,5 @@
 langchain
+langchain-community
 chainlit
 langchain_openai
 openai
