@@ -85,7 +85,6 @@ namespace = None
 from langchain.memory import ChatMessageHistory, ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain.vectorstores.pinecone import Pinecone
-import pinecone
 
 @cl.on_chat_start
 async def start():
