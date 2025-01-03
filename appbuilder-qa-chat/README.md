@@ -1,17 +1,12 @@
-## 什么是AppBuilder-SDK👋
-Baidu Smart Cloud Qianfan AppBuilder-SDK is a client SDK of a one-stop development platform provided by [Baidu Smart Cloud Qianfan AppBuilder](https://appbuilder.cloud.baidu.com/) for AI native application developers.
+## What is AppBuilder👋
+[Baidu Smart Cloud Qianfan AppBuilder](https://appbuilder.cloud.baidu.com/): an enterprise-level one-stop big model and AI native application development and service platform.
 
-We provide three types of functions from bottom to top: basic components, process orchestration, and end-to-end applications. Using Baidu Smart Cloud Qianfan AppBuilder-SDK, you can:
-
-- Cooperate with Baidu Smart Cloud Qianfan AppBuilder platform [web version](https://console.bce.baidu.com/ai_apaas/app) to build an end-to-end AI native application including Baidu's industrial practice in minutes
-- Cooperate with `basic components` & `process orchestration` to build personalized Assistant + FunctionCall applications in a building block manner
-- Provide two service-oriented deployment methods, `API call` & `interactive window`, support fast cloud migration and smooth embedding into your products
 
 - [AppBuilder official website](https://appbuilder.cloud.baidu.com/)
 - [AppBuilder-SDK open source code repository](https://github.com/baidubce/app-builder)
 - [AppBuilder Documentation Center](https://cloud.baidu.com/doc/AppBuilder/index.html)
 
-## How to use AppBuilder-SDK & Chainlit visualization function💻
+## How to use AppBuilder & Chainlit visualization function💻
 The `ChainlitRuntime` module in the current SDK implements basic visualization functions based on Chainlit, and supports AppBuilderClient + capability components to achieve visualization interaction.
 - The `chainlit_component` interface supports simple interaction of basic components
 - The `chainlit_agent` interface supports advanced interaction of AppBuilderClient, providing the functions of creating new sessions and uploading files
