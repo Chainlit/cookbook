@@ -11,6 +11,7 @@ from literalai.helper import utc_now
 import chainlit as cl
 from chainlit.config import config
 from chainlit.element import Element
+from chainlit.context import local_steps
 from openai.types.beta.threads.runs import RunStep
 
 
@@ -31,6 +32,10 @@ class EventHandler(AsyncAssistantEventHandler):
         self.current_step: cl.Step = None
         self.current_tool_call = None
         self.assistant_name = assistant_name
+        previous_steps = local_steps.get() or []
+        parent_step = previous_steps[-1] if previous_steps else None
+        if parent_step:
+            self.parent_id = parent_step.id
 
     async def on_run_step_created(self, run_step: RunStep) -> None:
         cl.user_session.set("run_step", run_step)
@@ -68,7 +73,7 @@ class EventHandler(AsyncAssistantEventHandler):
 
     async def on_tool_call_created(self, tool_call):
         self.current_tool_call = tool_call.id
-        self.current_step = cl.Step(name=tool_call.type, type="tool", parent_id=cl.context.current_run.id)
+        self.current_step = cl.Step(name=tool_call.type, type="tool", parent_id=self.parent_id)
         self.current_step.show_input = "python"
         self.current_step.start = utc_now()
         await self.current_step.send()
@@ -76,7 +81,7 @@ class EventHandler(AsyncAssistantEventHandler):
     async def on_tool_call_delta(self, delta, snapshot): 
         if snapshot.id != self.current_tool_call:
             self.current_tool_call = snapshot.id
-            self.current_step = cl.Step(name=delta.type, type="tool",  parent_id=cl.context.current_run.id)
+            self.current_step = cl.Step(name=delta.type, type="tool", parent_id=self.parent_id)
             self.current_step.start = utc_now()
             if snapshot.type == "code_interpreter":
                  self.current_step.show_input = "python"

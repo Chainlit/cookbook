@@ -4,16 +4,13 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
-from langchain.memory import ChatMessageHistory, ConversationBufferMemory
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain.memory import ConversationBufferMemory
 from langchain.docstore.document import Document
-import pinecone
+from pinecone import Pinecone as PineconeClient
 import chainlit as cl
 
-pinecone.init(
-    api_key=os.environ.get("PINECONE_API_KEY"),
-    environment=os.environ.get("PINECONE_ENV"),
-)
-
+pc = PineconeClient(api_key=os.environ.get("PINECONE_API_KEY"))
 
 index_name = "langchain-demo"
 

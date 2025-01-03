@@ -3,6 +3,8 @@ title: 'AutoGen with Chainlit'
 tags: ['autogen', 'chainlit']
 ---
 
+> **Warning:** The async version of the application is currently not working and is a draft.
+
 # AutoGen with Chainlit
 
 This repository demonstrates the integration of [AutoGen](https://microsoft.github.io/autogen/) with Chainlit to create an interactive chat application that can execute code and perform tasks such as plotting a chart of stock price changes and saving it to disk.
