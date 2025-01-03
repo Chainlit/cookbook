@@ -1,0 +1,5 @@
+chainlit==1.0.506
+anthropic==0.25.7
+openai==1.25.1
+google-generativeai==0.5.2
+-e .
