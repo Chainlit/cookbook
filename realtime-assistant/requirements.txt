@@ -1,0 +1,5 @@
+chainlit==2.0rc0
+openai
+yfinance
+plotly
+websockets==14.1
