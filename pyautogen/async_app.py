@@ -52,23 +52,23 @@ class ChainlitUserProxyAgent(UserProxyAgent):
                 content="Continue or provide feedback?",
                 actions=[
                         cl.Action(
-                            name="continue", value="continue", label="✅ Continue"
+                            name="continue", payload={"value": "continue"}, label="✅ Continue"
                         ),
                     cl.Action(
                             name="feedback",
-                            value="feedback",
+                            payload={"value": "feedback"},
                             label="💬 Provide feedback",
                         ),
                     cl.Action(
                             name="exit",
-                            value="exit",
+                            payload={"value": "exit"},
                             label="🔚 Exit Conversation"
                         ),
                 ],
             )
-            if res.get("value") == "continue":
+            if res.get("payload").get("value") == "continue":
                 return ""
-            if res.get("value") == "exit":
+            if res.get("payload").get("value") == "exit":
                 return "exit"
 
         reply = await ask_helper(

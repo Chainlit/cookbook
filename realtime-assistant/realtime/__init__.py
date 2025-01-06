@@ -93,7 +93,7 @@ class RealtimeAPI(RealtimeEventHandler):
     async def connect(self, model='gpt-4o-realtime-preview-2024-10-01'):
         if self.is_connected():
             raise Exception("Already connected")
-        self.ws = await websockets.connect(f"{self.url}?model={model}", additional_headers={
+        self.ws = await websockets.connect(f"{self.url}?model={model}", extra_headers={
             'Authorization': f'Bearer {self.api_key}',
             'OpenAI-Beta': 'realtime=v1'
         })

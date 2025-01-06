@@ -1,6 +1,5 @@
 import os
 import plotly
-from io import BytesIO
 from pathlib import Path
 from typing import List
 
@@ -50,7 +49,6 @@ class EventHandler(AsyncAssistantEventHandler):
     async def on_text_done(self, text):
         await self.current_message.update()
         if text.annotations:
-            print(text.annotations)
             for annotation in text.annotations:
                 if annotation.type == "file_path":
                     response = await async_openai_client.files.with_raw_response.content(annotation.file_path.file_id)
