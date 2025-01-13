@@ -4,16 +4,13 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
-from langchain.memory import ChatMessageHistory, ConversationBufferMemory
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain.memory import ConversationBufferMemory
 from langchain.docstore.document import Document
-import pinecone
+from pinecone import Pinecone as PineconeClient
 import chainlit as cl
 
-pinecone.init(
-    api_key=os.environ.get("PINECONE_API_KEY"),
-    environment=os.environ.get("PINECONE_ENV"),
-)
-
+pc = PineconeClient(api_key=os.environ.get("PINECONE_API_KEY"))
 
 index_name = "langchain-demo"
 
@@ -56,10 +53,15 @@ async def main(message: cl.Message):
     chain = cl.user_session.get("chain")  # type: ConversationalRetrievalChain
 
     cb = cl.AsyncLangchainCallbackHandler()
-
-    res = await chain.acall(message.content, callbacks=[cb])
-    answer = res["answer"]
-    source_documents = res["source_documents"]  # type: List[Document]
+    answer="\n N/A" 
+    source_documents=None
+    # check for null values
+    if chain:
+       res = await chain.acall(message.content, callbacks=[cb])
+       answer = res["answer"]
+       source_documents = res["source_documents"]  # type: List[Document]
+    else: 
+       answer += "\nNo chain found"
 
     text_elements = []  # type: List[cl.Text]
 

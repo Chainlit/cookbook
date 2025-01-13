@@ -1,18 +1,38 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { v4 as uuidv4 } from "uuid";
 
 import {
   useChatInteract,
   useChatMessages,
   IStep,
 } from "@chainlit/react-client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+function flattenMessages(
+  messages: IStep[], 
+  condition: (node: IStep) => boolean
+): IStep[] {
+  return messages.reduce((acc: IStep[], node) => {
+    if (condition(node)) {
+      acc.push(node);
+    }
+    
+    if (node.steps?.length) {
+      acc.push(...flattenMessages(node.steps, condition));
+    }
+    
+    return acc;
+  }, []);
+}
 
 export function Playground() {
   const [inputValue, setInputValue] = useState("");
   const { sendMessage } = useChatInteract();
   const { messages } = useChatMessages();
+
+  const flatMessages = useMemo(() => {
+    return flattenMessages(messages, (m) => m.type.includes("message"))
+  }, [messages])
 
   const handleSendMessage = () => {
     const content = inputValue.trim();
@@ -51,7 +71,7 @@ export function Playground() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
       <div className="flex-1 overflow-auto p-6">
         <div className="space-y-4">
-          {messages.map((message) => renderMessage(message))}
+          {flatMessages.map((message) => renderMessage(message))}
         </div>
       </div>
       <div className="border-t p-4 bg-white dark:bg-gray-800">

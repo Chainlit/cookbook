@@ -103,7 +103,7 @@ async def analyze(table):
             await final_answer.stream_token(token)
 
     final_answer.actions = [
-        cl.Action(name="take_action", value="action", label="Take action")
+        cl.Action(name="take_action", payload={}, label="Take action")
     ]
     await final_answer.update()
 

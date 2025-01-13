@@ -13,14 +13,10 @@ function App() {
     if (session?.socket.connected) {
       return;
     }
-    fetch("http://localhost:80/custom-auth")
-      .then((res) => {
-        return res.json();
-      })
-      .then((data) => {
+    fetch("http://localhost:80/custom-auth", {credentials: "include"})
+      .then(() => {
         connect({
-          userEnv,
-          accessToken: `Bearer: ${data.token}`,
+          userEnv
         });
       });
   }, [connect]);

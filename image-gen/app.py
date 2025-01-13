@@ -11,8 +11,8 @@ from chainlit.input_widget import Select, Switch, Slider
 
 @cl.action_callback("Create variation")
 async def create_variant(action: Action):
-    agent_input = f"Create a variation of {action.value}"
-    await cl.Message(content=f"Creating a variation of `{action.value}`.").send()
+    agent_input = f"Create a variation of {action.payload.get("image")}"
+    await cl.Message(content=f"Creating a variation of `{action.payload.get("image")}`.").send()
     await main(cl.Message(content=agent_input))
 
 
@@ -137,6 +137,6 @@ async def main(message: cl.Message):
                 display="inline",
             )
         ]
-        actions = [cl.Action(name="Create variation", value=generated_image_name)]
+        actions = [cl.Action(name="Create variation", payload={"image": generated_image_name})]
 
     await cl.Message(content=res, elements=elements, actions=actions).send()
