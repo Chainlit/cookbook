@@ -15,16 +15,21 @@ const ChainlitChat = () => {
     if (session?.socket.connected) {
       return;
     }
-    fetch(`${CHAINLIT_SERVER_HOST}/custom-auth`)
-      .then((res) => {
-        return res.json();
-      })
-      .then((data) => {
+    fetch(`${CHAINLIT_SERVER_HOST}/custom-auth`, {credentials: "include"})
+      .then(() => {
         connect({
           userEnv,
-          accessToken: `Bearer: ${data.token}`,
         });
       });
+      // .then((res) => {
+      //   return res.json();
+      // })
+      // .then((data) => {
+      //   connect({
+      //     userEnv,
+      //     accessToken: `Bearer: ${data.token}`,
+      //   });
+      // });
   },[connect]);
   return (
     <Playground/>

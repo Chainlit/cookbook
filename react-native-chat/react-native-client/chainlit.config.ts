@@ -1,1 +1,1 @@
-export const CHAINLIT_SERVER_HOST = "http://172.21.33.60:8080";//change to your backend address
+export const CHAINLIT_SERVER_HOST = "http://172.21.60.62:8080";//change to your backend address

@@ -66,9 +66,11 @@ const useChatSession = () => {
   const setCurrentThreadId = useSetRecoilState(currentThreadIdState);
   const _connect = useCallback(
     ({
+      transports,
       userEnv,
       accessToken
     }: {
+      transports?: string[]
       userEnv: Record<string, string>;
       accessToken?: string;
     }) => {
@@ -81,6 +83,17 @@ const useChatSession = () => {
 
       const socket = io(uri, {
         path,
+        withCredentials: true,
+        transports,
+        auth: {
+          token: accessToken,
+          clientType: client.type,
+          sessionId,
+          threadId: idToResume || '',
+          userEnv: JSON.stringify(userEnv),
+          chatProfile: chatProfile ? encodeURIComponent(chatProfile) : ''
+        }
+        /* 1.2原版
         extraHeaders: {
           Authorization: accessToken || '',
           'X-Chainlit-Client-Type': client.type,
@@ -91,6 +104,7 @@ const useChatSession = () => {
             ? encodeURIComponent(chatProfile)
             : ''
         }
+        */
       });
       setSession((old) => {
         old?.socket?.removeAllListeners();
