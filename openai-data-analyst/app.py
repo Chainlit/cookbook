@@ -1,8 +1,5 @@
 import os
-import io
-import wave
 import plotly
-import numpy as np
 from pathlib import Path
 from typing import List
 
@@ -136,15 +133,6 @@ class EventHandler(AsyncAssistantEventHandler):
         await self.current_message.update()
 
 
-async def speech_to_text(audio_file):
-    response = await async_openai_client.audio.transcriptions.create(
-        model="whisper-1",
-        file=("audio.wav", audio_file, "audio/wav"),
-    )
-
-    return response.text
-
-
 async def upload_files(files: List[Element]):
     file_ids = []
     for file in files:
@@ -184,46 +172,7 @@ async def set_starters():
             icon="/public/write.svg",
             )
         ]
-
-
-@cl.on_audio_start
-async def on_audio_start():
-    # Reset accumulator on new audio session
-    cl.user_session.set("audio_chunks", [])
-    return True
-
-
-@cl.on_audio_chunk
-async def on_audio_chunk(chunk: cl.InputAudioChunk):
-    audio_chunks = cl.user_session.get("audio_chunks")
-    if audio_chunks is not None:
-        audio_chunks.append(np.frombuffer(chunk.data, dtype=np.int16))
-
-
-@cl.on_audio_end
-async def on_audio_end():
-    if audio_chunks:=cl.user_session.get("audio_chunks"):
-       # Concatenate all chunks
-        concatenated = np.concatenate(list(audio_chunks))
-        
-        # Create an in-memory binary stream
-        wav_buffer = io.BytesIO()
-        
-        # Create WAV file with proper parameters
-        with wave.open(wav_buffer, 'wb') as wav_file:
-            wav_file.setnchannels(1)  # mono
-            wav_file.setsampwidth(2)  # 2 bytes per sample (16-bit)
-            wav_file.setframerate(24000)  # sample rate (24kHz PCM)
-            wav_file.writeframes(concatenated.tobytes())
-        
-        # Reset buffer position
-        wav_buffer.seek(0)
-        
-        cl.user_session.set("audio_chunks", [])
-        transcript = await speech_to_text(wav_buffer)
-        message = await cl.Message(content=transcript, type="user_message", elements=[cl.Audio(name="original_audio", content=wav_buffer.getvalue())]).send()
-        await main(message)
-        
+    
 
 @cl.on_chat_start
 async def start_chat():
