@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "cl-sdk/*": ["./libs/cl-sdk/*"],
+      "cl-sdk-1.2/*": ["./libs/cl-sdk-1.2/*"]
+    }
+  },
+  "extends": "expo/tsconfig.base"
+}
