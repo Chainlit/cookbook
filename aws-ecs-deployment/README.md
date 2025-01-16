@@ -48,9 +48,9 @@ WORKDIR /app
 # Install dependencies
 COPY requirements.txt /app/
 RUN pip install -r /app/requirements.txt
-Copy application code
+# Copy application code
 COPY . /app/
-Expose the port the app runs on
+# Expose the port the app runs on
 EXPOSE 8080
 # Command to run the app
 CMD ["python", "-m", "chainlit", "run", "app.py", "-h", "--port", "8080"]
