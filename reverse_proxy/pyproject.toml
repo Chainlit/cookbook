@@ -1,0 +1,9 @@
+[project]
+name = "reverse-proxy"
+version = "0.1.0"
+description = "Run chainlit on a prefix (root-path) behind Caddy as a reverse proxy."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "chainlit",
+]
