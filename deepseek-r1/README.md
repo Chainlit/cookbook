@@ -5,6 +5,10 @@ tags: ['reasoning']
 
 # Running DeepSeek R1 with Chainlit
 
+
+https://github.com/user-attachments/assets/9fe6d64a-f472-4a0c-99c0-fa8615e24dfc
+
+
 This example shows how to use DeepSeek R1 while exposing the reasoning to the user using the Chainlit `Step` class.
 
 Two variants are available in this example:
