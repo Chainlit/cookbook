@@ -161,6 +161,14 @@ async def process_audio():
         
         cl.user_session.set("audio_chunks", [])
 
+    frames = wav_file.getnframes()
+    rate = wav_file.getframerate()
+
+    duration = frames / float(rate)  
+    if duration <= 1.71:
+        print("The audio is too short, please try again.")
+        return
+
     audio_buffer = wav_buffer.getvalue()
 
     input_audio_el = cl.Audio(content=audio_buffer, mime="audio/wav")
