@@ -11,7 +11,7 @@ async def main():
         ],
     ).send()
 
-    if res and res.get.get("payload").get("value") == "continue":
+    if res and res.get("payload").get("value") == "continue":
         await cl.Message(
             content="Continue!",
         ).send()
