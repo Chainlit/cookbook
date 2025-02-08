@@ -1,0 +1,9 @@
+# environment variables can be defined here
+# This application needs a file named as .env 
+# currently we define a variable to denote the LLM Model to be used in application
+# At a given time only one LLM Model should be active. Hence comment out all the models except one at a time.
+
+
+#LLM_MODEL = llama2
+# LLM_MODEL = phi
+LLM_MODEL = gemma
