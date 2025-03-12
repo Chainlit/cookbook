@@ -1,2 +1,2 @@
-chainlit==2.4.0rc0
+chainlit==2.4.0
 anthropic
