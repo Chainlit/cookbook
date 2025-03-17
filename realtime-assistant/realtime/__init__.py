@@ -90,7 +90,7 @@ class RealtimeAPI(RealtimeEventHandler):
     def log(self, *args):
         logger.debug(f"[Websocket/{datetime.utcnow().isoformat()}]", *args)
 
-    async def connect(self, model='gpt-4o-realtime-preview-2024-10-01'):
+    async def connect(self, model='gpt-4o-realtime-preview-2024-12-17'):
         if self.is_connected():
             raise Exception("Already connected")
         self.ws = await websockets.connect(f"{self.url}?model={model}", additional_headers={
