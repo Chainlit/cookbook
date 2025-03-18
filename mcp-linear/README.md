@@ -14,3 +14,5 @@ We're working with top SaaS companies to create their MCP stacks, enabling AI ag
 ### Linear MCP example
 In the example below, the user installs the Linear MCP server on the Chainlit client. The LLM can now leverage all LLM tools available in Linear's [server](https://github.com/tiovikram/linear-mcp) for tiovikram.
 
+https://github.com/user-attachments/assets/3f83119c-9584-42e1-b186-312edf1da05d
+
