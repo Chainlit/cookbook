@@ -2,7 +2,7 @@
 FROM --platform=linux/amd64 python:3.9-slim
 
 # Set environment variables (e.g., set Python to run in unbuffered mode)
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 
 # Set the working directory
 WORKDIR /app
@@ -17,4 +17,4 @@ COPY . /app/
 
 EXPOSE 8080
 
-CMD ["python", "-m", "chainlit", "run", "app.py", "-h", "--port", "8080"]
+CMD ["python", "-m", "chainlit", "run", "app.py", "-h", "--host", "0.0.0.0", "--port", "8080"]
