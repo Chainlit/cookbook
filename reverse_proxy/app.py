@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from chainlit.utils import mount_chainlit
 
-app = FastAPI()
+app = FastAPI(root_path="/proxy")
 
 
 @app.get("/app")
