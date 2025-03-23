@@ -5,9 +5,9 @@ from openai import AsyncOpenAI
 import chainlit as cl
 
 client = AsyncOpenAI(
-    api_key=os.getenv("DEEP_SEEK_API_KEY"),
-    base_url="https://api.deepseek.com"
-    )
+    api_key=os.getenv("DEEP_SEEK_API_KEY"), base_url="https://api.deepseek.com"
+)
+
 
 @cl.on_message
 async def on_message(msg: cl.Message):
@@ -16,14 +16,14 @@ async def on_message(msg: cl.Message):
         model="deepseek-reasoner",
         messages=[
             {"role": "system", "content": "You are an helpful assistant"},
-            *cl.chat_context.to_openai()
+            *cl.chat_context.to_openai(),
         ],
-        stream=True
+        stream=True,
     )
 
     # Flag to track if we've exited the thinking step
     thinking_completed = False
-    
+
     # Streaming the thinking
     async with cl.Step(name="Thinking") as thinking_step:
         async for chunk in stream:
@@ -38,8 +38,7 @@ async def on_message(msg: cl.Message):
                 await thinking_step.update()
                 thinking_completed = True
                 break
-    
-    
+
     final_answer = cl.Message(content="")
 
     # Streaming the final answer
@@ -47,5 +46,5 @@ async def on_message(msg: cl.Message):
         delta = chunk.choices[0].delta
         if delta.content:
             await final_answer.stream_token(delta.content)
-            
+
     await final_answer.send()

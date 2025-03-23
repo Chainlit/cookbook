@@ -4,6 +4,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.groq import Groq
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
 import chainlit as cl
 
@@ -22,20 +23,25 @@ except:
 
 @cl.on_chat_start
 async def factory():
-    embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embed_model = HuggingFaceEmbedding(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
 
     llm = Groq(model="llama3-70b-8192", api_key=GROQ_API_KEY)
 
-    service_context = ServiceContext.from_defaults(embed_model=embed_model, llm=llm,
-                        callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]),
+    service_context = ServiceContext.from_defaults(
+        embed_model=embed_model,
+        llm=llm,
+        callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]),
     )
     chat_engine = index.as_chat_engine(service_context=service_context)
 
     cl.user_session.set("chat_engine", chat_engine)
 
+
 @cl.on_message
 async def main(message: cl.Message):
-    chat_engine = cl.user_session.get("chat_engine")  
+    chat_engine = cl.user_session.get("chat_engine")
     response = await cl.make_async(chat_engine.chat)(message.content)
 
     response_message = cl.Message(content="", author="Assistant")

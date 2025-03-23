@@ -1,9 +1,10 @@
 import subprocess
 
+
 async def vue_install_package(path: str, package_name: str):
     """
     This function is used to install a package in the Vue project.
-    Parameters: 
+    Parameters:
         package_name : The name of the package.
         path : The path of the project.
     """
@@ -16,10 +17,11 @@ async def vue_install_package(path: str, package_name: str):
     except Exception as e:
         return {"status": "false", "description": str(e)}
 
+
 async def vue_create_directory(path: str, directory_name: str):
     """
     This function is used to create a directory in the Vue project.
-    Parameters: 
+    Parameters:
         path : The path of the project.
         directory_name : The name of the directory.
     """
@@ -31,11 +33,12 @@ async def vue_create_directory(path: str, directory_name: str):
         }
     except Exception as e:
         return {"status": "false", "description": str(e)}
-    
+
+
 async def vue_create_file(path: str, file_name: str):
     """
     This function is used to create a file in the Vue project.
-    Parameters: 
+    Parameters:
         path : The path of the project.
         file_name : The name of the file.
     """
@@ -47,11 +50,12 @@ async def vue_create_file(path: str, file_name: str):
         }
     except Exception as e:
         return {"status": "false", "description": str(e)}
-    
+
+
 async def vue_get_project_file_list(path: str):
     """
     This function is used to get the file list of the Vue project.
-    Parameters: 
+    Parameters:
         project_name : The name of the project.
         path : The path of the project.
     """
@@ -64,12 +68,12 @@ async def vue_get_project_file_list(path: str):
         }
     except Exception as e:
         return {"status": "false", "description": str(e)}
-    
-    
+
+
 async def get_vue_project_file_content(path: str, file_name: str):
     """
     This function is used to get the content of a file in the Vue project.
-    Parameters: 
+    Parameters:
         path : The path of the file you want to write to.
         file_name : The name of the file.
     """
@@ -82,11 +86,12 @@ async def get_vue_project_file_content(path: str, file_name: str):
         }
     except Exception as e:
         return {"status": "false", "description": str(e)}
-      
+
+
 async def write_vue_project_file_content(path: str, file_name: str, content: str):
     """
     This function is used to write content to a file in the Vue project.
-    Parameters: 
+    Parameters:
         path : The path of the file you want to write to.
         file_name : The name of the file.
         content : The content to write.
@@ -100,4 +105,3 @@ async def write_vue_project_file_content(path: str, file_name: str, content: str
         }
     except Exception as e:
         return {"status": "false", "description": str(e)}
-    

@@ -25,7 +25,6 @@ config.ui.name = assistant.name
 
 
 class EventHandler(AsyncAssistantEventHandler):
-
     def __init__(self, assistant_name: str) -> None:
         super().__init__()
         self.current_message: cl.Message = None
@@ -41,7 +40,9 @@ class EventHandler(AsyncAssistantEventHandler):
         cl.user_session.set("run_step", run_step)
 
     async def on_text_created(self, text) -> None:
-        self.current_message = await cl.Message(author=self.assistant_name, content="").send()
+        self.current_message = await cl.Message(
+            author=self.assistant_name, content=""
+        ).send()
 
     async def on_text_delta(self, delta, snapshot):
         if delta.value:
@@ -52,46 +53,56 @@ class EventHandler(AsyncAssistantEventHandler):
         if text.annotations:
             for annotation in text.annotations:
                 if annotation.type == "file_path":
-                    response = await async_openai_client.files.with_raw_response.content(annotation.file_path.file_id)
+                    response = (
+                        await async_openai_client.files.with_raw_response.content(
+                            annotation.file_path.file_id
+                        )
+                    )
                     file_name = annotation.text.split("/")[-1]
                     try:
                         fig = plotly.io.from_json(response.content)
                         element = cl.Plotly(name=file_name, figure=fig)
-                        await cl.Message(
-                            content="",
-                            elements=[element]).send()
+                        await cl.Message(content="", elements=[element]).send()
                     except Exception as e:
                         element = cl.File(content=response.content, name=file_name)
-                        await cl.Message(
-                            content="",
-                            elements=[element]).send()
+                        await cl.Message(content="", elements=[element]).send()
                     # Hack to fix links
-                    if annotation.text in self.current_message.content and element.chainlit_key:
-                        self.current_message.content = self.current_message.content.replace(annotation.text, f"/project/file/{element.chainlit_key}?session_id={cl.context.session.id}")
+                    if (
+                        annotation.text in self.current_message.content
+                        and element.chainlit_key
+                    ):
+                        self.current_message.content = self.current_message.content.replace(
+                            annotation.text,
+                            f"/project/file/{element.chainlit_key}?session_id={cl.context.session.id}",
+                        )
                         await self.current_message.update()
 
     async def on_tool_call_created(self, tool_call):
         self.current_tool_call = tool_call.id
-        self.current_step = cl.Step(name=tool_call.type, type="tool", parent_id=self.parent_id)
+        self.current_step = cl.Step(
+            name=tool_call.type, type="tool", parent_id=self.parent_id
+        )
         self.current_step.show_input = "python"
         self.current_step.start = utc_now()
         await self.current_step.send()
 
-    async def on_tool_call_delta(self, delta, snapshot): 
+    async def on_tool_call_delta(self, delta, snapshot):
         if snapshot.id != self.current_tool_call:
             self.current_tool_call = snapshot.id
-            self.current_step = cl.Step(name=delta.type, type="tool", parent_id=self.parent_id)
+            self.current_step = cl.Step(
+                name=delta.type, type="tool", parent_id=self.parent_id
+            )
             self.current_step.start = utc_now()
             if snapshot.type == "code_interpreter":
-                 self.current_step.show_input = "python"
+                self.current_step.show_input = "python"
             if snapshot.type == "function":
                 self.current_step.name = snapshot.function.name
                 self.current_step.language = "json"
             await self.current_step.send()
-        
+
         if delta.type == "function":
             pass
-        
+
         if delta.type == "code_interpreter":
             if delta.code_interpreter.outputs:
                 for output in delta.code_interpreter.outputs:
@@ -105,7 +116,9 @@ class EventHandler(AsyncAssistantEventHandler):
                         self.current_step.output = output.image.model_dump_json()
             else:
                 if delta.code_interpreter.input:
-                    await self.current_step.stream_token(delta.code_interpreter.input, is_input=True)  
+                    await self.current_step.stream_token(
+                        delta.code_interpreter.input, is_input=True
+                    )
 
     async def on_event(self, event) -> None:
         if event.event == "error":
@@ -114,7 +127,7 @@ class EventHandler(AsyncAssistantEventHandler):
     async def on_exception(self, exception: Exception) -> None:
         return cl.ErrorMessage(content=str(exception)).send()
 
-    async def on_tool_call_done(self, tool_call):       
+    async def on_tool_call_done(self, tool_call):
         self.current_step.end = utc_now()
         await self.current_step.update()
 
@@ -122,10 +135,7 @@ class EventHandler(AsyncAssistantEventHandler):
         image_id = image_file.file_id
         response = await async_openai_client.files.with_raw_response.content(image_id)
         image_element = cl.Image(
-            name=image_id,
-            content=response.content,
-            display="inline",
-            size="large"
+            name=image_id, content=response.content, display="inline", size="large"
         )
         if not self.current_message.elements:
             self.current_message.elements = []
@@ -152,7 +162,15 @@ async def process_files(files: List[Element]):
     return [
         {
             "file_id": file_id,
-            "tools": [{"type": "code_interpreter"}, {"type": "file_search"}] if file.mime in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/markdown", "application/pdf", "text/plain"] else [{"type": "code_interpreter"}],
+            "tools": [{"type": "code_interpreter"}, {"type": "file_search"}]
+            if file.mime
+            in [
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "text/markdown",
+                "application/pdf",
+                "text/plain",
+            ]
+            else [{"type": "code_interpreter"}],
         }
         for file_id, file in zip(file_ids, files)
     ]
@@ -165,14 +183,14 @@ async def set_starters():
             label="Run Tesla stock analysis",
             message="Make a data analysis on the tesla-stock-price.csv file I previously uploaded.",
             icon="/public/write.svg",
-            ),
+        ),
         cl.Starter(
             label="Run a data analysis on my CSV",
             message="Make a data analysis on the next CSV file I will upload.",
             icon="/public/write.svg",
-            )
-        ]
-    
+        ),
+    ]
+
 
 @cl.on_chat_start
 async def start_chat():
@@ -186,7 +204,9 @@ async def start_chat():
 async def stop_chat():
     current_run_step: RunStep = cl.user_session.get("run_step")
     if current_run_step:
-        await async_openai_client.beta.threads.runs.cancel(thread_id=current_run_step.thread_id, run_id=current_run_step.run_id)
+        await async_openai_client.beta.threads.runs.cancel(
+            thread_id=current_run_step.thread_id, run_id=current_run_step.run_id
+        )
 
 
 @cl.on_message

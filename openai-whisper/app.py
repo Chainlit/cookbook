@@ -15,12 +15,17 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 if not ELEVENLABS_API_KEY or not ELEVENLABS_VOICE_ID or not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY, ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID must be set")
+    raise ValueError(
+        "OPENAI_API_KEY, ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID must be set"
+    )
 
 
 # Define a threshold for detecting silence and a timeout for ending a turn
-SILENCE_THRESHOLD = 3500 # Adjust based on your audio level (e.g., lower for quieter audio)
-SILENCE_TIMEOUT = 1300.0 # Seconds of silence to consider the turn finished
+SILENCE_THRESHOLD = (
+    3500  # Adjust based on your audio level (e.g., lower for quieter audio)
+)
+SILENCE_TIMEOUT = 1300.0  # Seconds of silence to consider the turn finished
+
 
 @cl.step(type="tool")
 async def speech_to_text(audio_file):
@@ -30,6 +35,7 @@ async def speech_to_text(audio_file):
 
     return response.text
 
+
 @cl.step(type="tool")
 async def text_to_speech(text: str, mime_type: str):
     CHUNK_SIZE = 1024
@@ -37,20 +43,17 @@ async def text_to_speech(text: str, mime_type: str):
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}"
 
     headers = {
-    "Accept": mime_type,
-    "Content-Type": "application/json",
-    "xi-api-key": ELEVENLABS_API_KEY
+        "Accept": mime_type,
+        "Content-Type": "application/json",
+        "xi-api-key": ELEVENLABS_API_KEY,
     }
 
     data = {
         "text": text,
         "model_id": "eleven_multilingual_v2",
-        "voice_settings": {
-            "stability": 0.5,
-            "similarity_boost": 0.5
-        }
+        "voice_settings": {"stability": 0.5, "similarity_boost": 0.5},
     }
-    
+
     async with httpx.AsyncClient(timeout=25.0) as client:
         response = await client.post(url, json=data, headers=headers)
         response.raise_for_status()  # Ensure we notice bad responses
@@ -61,7 +64,7 @@ async def text_to_speech(text: str, mime_type: str):
         async for chunk in response.aiter_bytes(chunk_size=CHUNK_SIZE):
             if chunk:
                 buffer.write(chunk)
-        
+
         buffer.seek(0)
         return buffer.name, buffer.read()
 
@@ -69,20 +72,18 @@ async def text_to_speech(text: str, mime_type: str):
 @cl.step(type="tool")
 async def generate_text_answer(transcription):
     message_history = cl.user_session.get("message_history")
-    
+
     message_history.append({"role": "user", "content": transcription})
-    
+
     response = await openai_client.chat.completions.create(
-        model="gpt-4o",
-        messages=message_history,
-        temperature=0.2
-        )
-    
+        model="gpt-4o", messages=message_history, temperature=0.2
+    )
+
     message = response.choices[0].message
     message_history.append(message)
-    
+
     return message.content
-    
+
 
 @cl.on_chat_start
 async def start():
@@ -103,7 +104,7 @@ async def on_audio_start():
 @cl.on_audio_chunk
 async def on_audio_chunk(chunk: cl.InputAudioChunk):
     audio_chunks = cl.user_session.get("audio_chunks")
-    
+
     if audio_chunks is not None:
         audio_chunk = np.frombuffer(chunk.data, dtype=np.int16)
         audio_chunks.append(audio_chunk)
@@ -124,7 +125,9 @@ async def on_audio_chunk(chunk: cl.InputAudioChunk):
     cl.user_session.set("last_elapsed_time", chunk.elapsedTime)
 
     # Compute the RMS (root mean square) energy of the audio chunk
-    audio_energy = audioop.rms(chunk.data, 2)  # Assumes 16-bit audio (2 bytes per sample)
+    audio_energy = audioop.rms(
+        chunk.data, 2
+    )  # Assumes 16-bit audio (2 bytes per sample)
 
     if audio_energy < SILENCE_THRESHOLD:
         # Audio is considered silent
@@ -142,29 +145,29 @@ async def on_audio_chunk(chunk: cl.InputAudioChunk):
 
 async def process_audio():
     # Get the audio buffer from the session
-    if audio_chunks:=cl.user_session.get("audio_chunks"):
-       # Concatenate all chunks
+    if audio_chunks := cl.user_session.get("audio_chunks"):
+        # Concatenate all chunks
         concatenated = np.concatenate(list(audio_chunks))
-        
+
         # Create an in-memory binary stream
         wav_buffer = io.BytesIO()
-        
+
         # Create WAV file with proper parameters
-        with wave.open(wav_buffer, 'wb') as wav_file:
+        with wave.open(wav_buffer, "wb") as wav_file:
             wav_file.setnchannels(1)  # mono
             wav_file.setsampwidth(2)  # 2 bytes per sample (16-bit)
             wav_file.setframerate(24000)  # sample rate (24kHz PCM)
             wav_file.writeframes(concatenated.tobytes())
-        
+
         # Reset buffer position
         wav_buffer.seek(0)
-        
+
         cl.user_session.set("audio_chunks", [])
 
     frames = wav_file.getnframes()
     rate = wav_file.getframerate()
 
-    duration = frames / float(rate)  
+    duration = frames / float(rate)
     if duration <= 1.71:
         print("The audio is too short, please try again.")
         return
@@ -177,22 +180,22 @@ async def process_audio():
     transcription = await speech_to_text(whisper_input)
 
     await cl.Message(
-        author="You", 
+        author="You",
         type="user_message",
         content=transcription,
-        elements=[input_audio_el]
+        elements=[input_audio_el],
     ).send()
 
     answer = await generate_text_answer(transcription)
 
     output_name, output_audio = await text_to_speech(answer, "audio/wav")
-    
+
     output_audio_el = cl.Audio(
         auto_play=True,
         mime="audio/wav",
         content=output_audio,
     )
-    
+
     await cl.Message(content=answer, elements=[output_audio_el]).send()
 
 

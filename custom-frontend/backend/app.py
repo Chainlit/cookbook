@@ -15,6 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/custom-auth")
 async def custom_auth(request: Request):
     # Verify the user's identity with custom logic.

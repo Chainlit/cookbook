@@ -6,7 +6,9 @@ async def main():
     res = await cl.AskActionMessage(
         content="Pick an action!",
         actions=[
-            cl.Action(name="continue", payload={"value": "continue"}, label="✅ Continue"),
+            cl.Action(
+                name="continue", payload={"value": "continue"}, label="✅ Continue"
+            ),
             cl.Action(name="cancel", payload={"value": "cancel"}, label="❌ Cancel"),
         ],
     ).send()

@@ -15,6 +15,7 @@ settings = {
     "presence_penalty": 0,
 }
 
+
 @cl.on_chat_start
 async def on_chat_start():
     cl.user_session.set(

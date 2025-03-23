@@ -102,22 +102,23 @@ async def on_message(message: cl.Message):
 
         def on_retriever_end(self, documents, *, run_id, parent_run_id, **kwargs):
             for d in documents:
-                source_page_pair = (d.metadata['source'], d.metadata['page'])
+                source_page_pair = (d.metadata["source"], d.metadata["page"])
                 self.sources.add(source_page_pair)  # Add unique pairs to the set
 
         def on_llm_end(self, response, *, run_id, parent_run_id, **kwargs):
             if len(self.sources):
-                sources_text = "\n".join([f"{source}#page={page}" for source, page in self.sources])
+                sources_text = "\n".join(
+                    [f"{source}#page={page}" for source, page in self.sources]
+                )
                 self.msg.elements.append(
                     cl.Text(name="Sources", content=sources_text, display="inline")
                 )
 
     async for chunk in runnable.astream(
         message.content,
-        config=RunnableConfig(callbacks=[
-            cl.LangchainCallbackHandler(),
-            PostMessageHandler(msg)
-        ]),
+        config=RunnableConfig(
+            callbacks=[cl.LangchainCallbackHandler(), PostMessageHandler(msg)]
+        ),
     ):
         await msg.stream_token(chunk)
 

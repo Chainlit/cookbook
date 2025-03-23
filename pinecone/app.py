@@ -53,15 +53,15 @@ async def main(message: cl.Message):
     chain = cl.user_session.get("chain")  # type: ConversationalRetrievalChain
 
     cb = cl.AsyncLangchainCallbackHandler()
-    answer="\n N/A" 
-    source_documents=None
+    answer = "\n N/A"
+    source_documents = None
     # check for null values
     if chain:
-       res = await chain.acall(message.content, callbacks=[cb])
-       answer = res["answer"]
-       source_documents = res["source_documents"]  # type: List[Document]
-    else: 
-       answer += "\nNo chain found"
+        res = await chain.acall(message.content, callbacks=[cb])
+        answer = res["answer"]
+        source_documents = res["source_documents"]  # type: List[Document]
+    else:
+        answer += "\nNo chain found"
 
     text_elements = []  # type: List[cl.Text]
 

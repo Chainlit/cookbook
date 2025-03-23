@@ -11,12 +11,14 @@ def random_secret(length: int = 64):
 
 
 def custom_oauth_enabled():
-    if (os.environ.get('OAUTH_AZURE_AD_B2C_CLIENT_ID') is not None
-            and os.environ.get('OAUTH_AZURE_AD_B2C_CLIENT_SECRET') is not None
-            and os.environ.get('OAUTH_AZURE_AD_B2C_TENANT_ID') is not None
-            and os.environ.get('OAUTH_AZURE_AD_B2C_TENANT_NAME') is not None
-            and os.environ.get('OAUTH_AZURE_AD_B2C_REDIRECT_URL') is not None
-            and os.environ.get('OAUTH_AZURE_AD_B2C_POLICY') is not None):
+    if (
+        os.environ.get("OAUTH_AZURE_AD_B2C_CLIENT_ID") is not None
+        and os.environ.get("OAUTH_AZURE_AD_B2C_CLIENT_SECRET") is not None
+        and os.environ.get("OAUTH_AZURE_AD_B2C_TENANT_ID") is not None
+        and os.environ.get("OAUTH_AZURE_AD_B2C_TENANT_NAME") is not None
+        and os.environ.get("OAUTH_AZURE_AD_B2C_REDIRECT_URL") is not None
+        and os.environ.get("OAUTH_AZURE_AD_B2C_POLICY") is not None
+    ):
         print("B2C OAuth configured.")
         return True
     else:

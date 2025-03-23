@@ -23,6 +23,7 @@ def float_to_16bit_pcm(float32_array):
     int16_array = np.clip(float32_array, -1, 1) * 32767
     return int16_array.astype(np.int16)
 
+
 def base64_to_array_buffer(base64_string):
     """
     Converts a base64 string to a numpy array buffer.
@@ -31,6 +32,7 @@ def base64_to_array_buffer(base64_string):
     """
     binary_data = base64.b64decode(base64_string)
     return np.frombuffer(binary_data, dtype=np.uint8)
+
 
 def array_buffer_to_base64(array_buffer):
     """
@@ -44,8 +46,8 @@ def array_buffer_to_base64(array_buffer):
         array_buffer = array_buffer.tobytes()
     else:
         array_buffer = array_buffer.tobytes()
-    
-    return base64.b64encode(array_buffer).decode('utf-8')
+
+    return base64.b64encode(array_buffer).decode("utf-8")
 
 
 class RealtimeEventHandler:
@@ -54,7 +56,7 @@ class RealtimeEventHandler:
 
     def on(self, event_name, handler):
         self.event_handlers[event_name].append(handler)
-        
+
     def clear_event_handlers(self):
         self.event_handlers = defaultdict(list)
 
@@ -79,7 +81,7 @@ class RealtimeEventHandler:
 class RealtimeAPI(RealtimeEventHandler):
     def __init__(self, url=None, api_key=None):
         super().__init__()
-        self.default_url = 'wss://api.openai.com/v1/realtime'
+        self.default_url = "wss://api.openai.com/v1/realtime"
         self.url = url or self.default_url
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.ws = None
@@ -90,20 +92,23 @@ class RealtimeAPI(RealtimeEventHandler):
     def log(self, *args):
         logger.debug(f"[Websocket/{datetime.utcnow().isoformat()}]", *args)
 
-    async def connect(self, model='gpt-4o-realtime-preview-2024-10-01'):
+    async def connect(self, model="gpt-4o-realtime-preview-2024-10-01"):
         if self.is_connected():
             raise Exception("Already connected")
-        self.ws = await websockets.connect(f"{self.url}?model={model}", extra_headers={
-            'Authorization': f'Bearer {self.api_key}',
-            'OpenAI-Beta': 'realtime=v1'
-        })
+        self.ws = await websockets.connect(
+            f"{self.url}?model={model}",
+            extra_headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "OpenAI-Beta": "realtime=v1",
+            },
+        )
         self.log(f"Connected to {self.url}")
         asyncio.create_task(self._receive_messages())
 
     async def _receive_messages(self):
         async for message in self.ws:
             event = json.loads(message)
-            if event['type'] == "error":
+            if event["type"] == "error":
                 logger.error("ERROR", event)
             self.log("received:", event)
             self.dispatch(f"server.{event['type']}", event)
@@ -115,11 +120,7 @@ class RealtimeAPI(RealtimeEventHandler):
         data = data or {}
         if not isinstance(data, dict):
             raise Exception("data must be a dictionary")
-        event = {
-            "event_id": self._generate_id("evt_"),
-            "type": event_name,
-            **data
-        }
+        event = {"event_id": self._generate_id("evt_"), "type": event_name, **data}
         self.dispatch(f"client.{event_name}", event)
         self.dispatch("client.*", event)
         self.log("sent:", event)
@@ -134,26 +135,43 @@ class RealtimeAPI(RealtimeEventHandler):
             self.ws = None
             self.log(f"Disconnected from {self.url}")
 
+
 class RealtimeConversation:
     default_frequency = config.features.audio.sample_rate
-    
+
     EventProcessors = {
-        'conversation.item.created': lambda self, event: self._process_item_created(event),
-        'conversation.item.truncated': lambda self, event: self._process_item_truncated(event),
-        'conversation.item.deleted': lambda self, event: self._process_item_deleted(event),
-        'conversation.item.input_audio_transcription.completed': lambda self, event: self._process_input_audio_transcription_completed(event),
-        'input_audio_buffer.speech_started': lambda self, event: self._process_speech_started(event),
-        'input_audio_buffer.speech_stopped': lambda self, event, input_audio_buffer: self._process_speech_stopped(event, input_audio_buffer),
-        'response.created': lambda self, event: self._process_response_created(event),
-        'response.output_item.added': lambda self, event: self._process_output_item_added(event),
-        'response.output_item.done': lambda self, event: self._process_output_item_done(event),
-        'response.content_part.added': lambda self, event: self._process_content_part_added(event),
-        'response.audio_transcript.delta': lambda self, event: self._process_audio_transcript_delta(event),
-        'response.audio.delta': lambda self, event: self._process_audio_delta(event),
-        'response.text.delta': lambda self, event: self._process_text_delta(event),
-        'response.function_call_arguments.delta': lambda self, event: self._process_function_call_arguments_delta(event),
+        "conversation.item.created": lambda self, event: self._process_item_created(
+            event
+        ),
+        "conversation.item.truncated": lambda self, event: self._process_item_truncated(
+            event
+        ),
+        "conversation.item.deleted": lambda self, event: self._process_item_deleted(
+            event
+        ),
+        "conversation.item.input_audio_transcription.completed": lambda self,
+        event: self._process_input_audio_transcription_completed(event),
+        "input_audio_buffer.speech_started": lambda self,
+        event: self._process_speech_started(event),
+        "input_audio_buffer.speech_stopped": lambda self,
+        event,
+        input_audio_buffer: self._process_speech_stopped(event, input_audio_buffer),
+        "response.created": lambda self, event: self._process_response_created(event),
+        "response.output_item.added": lambda self,
+        event: self._process_output_item_added(event),
+        "response.output_item.done": lambda self, event: self._process_output_item_done(
+            event
+        ),
+        "response.content_part.added": lambda self,
+        event: self._process_content_part_added(event),
+        "response.audio_transcript.delta": lambda self,
+        event: self._process_audio_transcript_delta(event),
+        "response.audio.delta": lambda self, event: self._process_audio_delta(event),
+        "response.text.delta": lambda self, event: self._process_text_delta(event),
+        "response.function_call_arguments.delta": lambda self,
+        event: self._process_function_call_arguments_delta(event),
     }
-    
+
     def __init__(self):
         self.clear()
 
@@ -170,7 +188,7 @@ class RealtimeConversation:
         self.queued_input_audio = input_audio
 
     def process_event(self, event, *args):
-        event_processor = self.EventProcessors.get(event['type'])
+        event_processor = self.EventProcessors.get(event["type"])
         if not event_processor:
             raise Exception(f"Missing conversation event processor for {event['type']}")
         return event_processor(self, event, *args)
@@ -182,176 +200,184 @@ class RealtimeConversation:
         return self.items[:]
 
     def _process_item_created(self, event):
-        item = event['item']
+        item = event["item"]
         new_item = item.copy()
-        if new_item['id'] not in self.item_lookup:
-            self.item_lookup[new_item['id']] = new_item
+        if new_item["id"] not in self.item_lookup:
+            self.item_lookup[new_item["id"]] = new_item
             self.items.append(new_item)
-        new_item['formatted'] = {
-            'audio': [],
-            'text': '',
-            'transcript': ''
-        }
-        if new_item['id'] in self.queued_speech_items:
-            new_item['formatted']['audio'] = self.queued_speech_items[new_item['id']]['audio']
-            del self.queued_speech_items[new_item['id']]
-        if 'content' in new_item:
-            text_content = [c for c in new_item['content'] if c['type'] in ['text', 'input_text']]
+        new_item["formatted"] = {"audio": [], "text": "", "transcript": ""}
+        if new_item["id"] in self.queued_speech_items:
+            new_item["formatted"]["audio"] = self.queued_speech_items[new_item["id"]][
+                "audio"
+            ]
+            del self.queued_speech_items[new_item["id"]]
+        if "content" in new_item:
+            text_content = [
+                c for c in new_item["content"] if c["type"] in ["text", "input_text"]
+            ]
             for content in text_content:
-                new_item['formatted']['text'] += content['text']
-        if new_item['id'] in self.queued_transcript_items:
-            new_item['formatted']['transcript'] = self.queued_transcript_items[new_item['id']]['transcript']
-            del self.queued_transcript_items[new_item['id']]
-        if new_item['type'] == 'message':
-            if new_item['role'] == 'user':
-                new_item['status'] = 'completed'
+                new_item["formatted"]["text"] += content["text"]
+        if new_item["id"] in self.queued_transcript_items:
+            new_item["formatted"]["transcript"] = self.queued_transcript_items[
+                new_item["id"]
+            ]["transcript"]
+            del self.queued_transcript_items[new_item["id"]]
+        if new_item["type"] == "message":
+            if new_item["role"] == "user":
+                new_item["status"] = "completed"
                 if self.queued_input_audio:
-                    new_item['formatted']['audio'] = self.queued_input_audio
+                    new_item["formatted"]["audio"] = self.queued_input_audio
                     self.queued_input_audio = None
             else:
-                new_item['status'] = 'in_progress'
-        elif new_item['type'] == 'function_call':
-            new_item['formatted']['tool'] = {
-                'type': 'function',
-                'name': new_item['name'],
-                'call_id': new_item['call_id'],
-                'arguments': ''
+                new_item["status"] = "in_progress"
+        elif new_item["type"] == "function_call":
+            new_item["formatted"]["tool"] = {
+                "type": "function",
+                "name": new_item["name"],
+                "call_id": new_item["call_id"],
+                "arguments": "",
             }
-            new_item['status'] = 'in_progress'
-        elif new_item['type'] == 'function_call_output':
-            new_item['status'] = 'completed'
-            new_item['formatted']['output'] = new_item['output']
+            new_item["status"] = "in_progress"
+        elif new_item["type"] == "function_call_output":
+            new_item["status"] = "completed"
+            new_item["formatted"]["output"] = new_item["output"]
         return new_item, None
 
     def _process_item_truncated(self, event):
-        item_id = event['item_id']
-        audio_end_ms = event['audio_end_ms']
+        item_id = event["item_id"]
+        audio_end_ms = event["audio_end_ms"]
         item = self.item_lookup.get(item_id)
         if not item:
             raise Exception(f'item.truncated: Item "{item_id}" not found')
         end_index = (audio_end_ms * self.default_frequency) // 1000
-        item['formatted']['transcript'] = ''
-        item['formatted']['audio'] = item['formatted']['audio'][:end_index]
+        item["formatted"]["transcript"] = ""
+        item["formatted"]["audio"] = item["formatted"]["audio"][:end_index]
         return item, None
 
     def _process_item_deleted(self, event):
-        item_id = event['item_id']
+        item_id = event["item_id"]
         item = self.item_lookup.get(item_id)
         if not item:
             raise Exception(f'item.deleted: Item "{item_id}" not found')
-        del self.item_lookup[item['id']]
+        del self.item_lookup[item["id"]]
         self.items.remove(item)
         return item, None
 
     def _process_input_audio_transcription_completed(self, event):
-        item_id = event['item_id']
-        content_index = event['content_index']
-        transcript = event['transcript']
-        formatted_transcript = transcript or ' '
+        item_id = event["item_id"]
+        content_index = event["content_index"]
+        transcript = event["transcript"]
+        formatted_transcript = transcript or " "
         item = self.item_lookup.get(item_id)
         if not item:
-            self.queued_transcript_items[item_id] = {'transcript': formatted_transcript}
+            self.queued_transcript_items[item_id] = {"transcript": formatted_transcript}
             return None, None
-        item['content'][content_index]['transcript'] = transcript
-        item['formatted']['transcript'] = formatted_transcript
-        return item, {'transcript': transcript}
+        item["content"][content_index]["transcript"] = transcript
+        item["formatted"]["transcript"] = formatted_transcript
+        return item, {"transcript": transcript}
 
     def _process_speech_started(self, event):
-        item_id = event['item_id']
-        audio_start_ms = event['audio_start_ms']
-        self.queued_speech_items[item_id] = {'audio_start_ms': audio_start_ms}
+        item_id = event["item_id"]
+        audio_start_ms = event["audio_start_ms"]
+        self.queued_speech_items[item_id] = {"audio_start_ms": audio_start_ms}
         return None, None
 
     def _process_speech_stopped(self, event, input_audio_buffer):
-        item_id = event['item_id']
-        audio_end_ms = event['audio_end_ms']
+        item_id = event["item_id"]
+        audio_end_ms = event["audio_end_ms"]
         speech = self.queued_speech_items[item_id]
-        speech['audio_end_ms'] = audio_end_ms
+        speech["audio_end_ms"] = audio_end_ms
         if input_audio_buffer:
-            start_index = (speech['audio_start_ms'] * self.default_frequency) // 1000
-            end_index = (speech['audio_end_ms'] * self.default_frequency) // 1000
-            speech['audio'] = input_audio_buffer[start_index:end_index]
+            start_index = (speech["audio_start_ms"] * self.default_frequency) // 1000
+            end_index = (speech["audio_end_ms"] * self.default_frequency) // 1000
+            speech["audio"] = input_audio_buffer[start_index:end_index]
         return None, None
 
     def _process_response_created(self, event):
-        response = event['response']
-        if response['id'] not in self.response_lookup:
-            self.response_lookup[response['id']] = response
+        response = event["response"]
+        if response["id"] not in self.response_lookup:
+            self.response_lookup[response["id"]] = response
             self.responses.append(response)
         return None, None
 
     def _process_output_item_added(self, event):
-        response_id = event['response_id']
-        item = event['item']
+        response_id = event["response_id"]
+        item = event["item"]
         response = self.response_lookup.get(response_id)
         if not response:
-            raise Exception(f'response.output_item.added: Response "{response_id}" not found')
-        response['output'].append(item['id'])
+            raise Exception(
+                f'response.output_item.added: Response "{response_id}" not found'
+            )
+        response["output"].append(item["id"])
         return None, None
 
     def _process_output_item_done(self, event):
-        item = event['item']
+        item = event["item"]
         if not item:
             raise Exception('response.output_item.done: Missing "item"')
-        found_item = self.item_lookup.get(item['id'])
+        found_item = self.item_lookup.get(item["id"])
         if not found_item:
             raise Exception(f'response.output_item.done: Item "{item["id"]}" not found')
-        found_item['status'] = item['status']
+        found_item["status"] = item["status"]
         return found_item, None
 
     def _process_content_part_added(self, event):
-        item_id = event['item_id']
-        part = event['part']
+        item_id = event["item_id"]
+        part = event["part"]
         item = self.item_lookup.get(item_id)
         if not item:
             raise Exception(f'response.content_part.added: Item "{item_id}" not found')
-        item['content'].append(part)
+        item["content"].append(part)
         return item, None
 
     def _process_audio_transcript_delta(self, event):
-        item_id = event['item_id']
-        content_index = event['content_index']
-        delta = event['delta']
+        item_id = event["item_id"]
+        content_index = event["content_index"]
+        delta = event["delta"]
         item = self.item_lookup.get(item_id)
         if not item:
-            raise Exception(f'response.audio_transcript.delta: Item "{item_id}" not found')
-        item['content'][content_index]['transcript'] += delta
-        item['formatted']['transcript'] += delta
-        return item, {'transcript': delta}
+            raise Exception(
+                f'response.audio_transcript.delta: Item "{item_id}" not found'
+            )
+        item["content"][content_index]["transcript"] += delta
+        item["formatted"]["transcript"] += delta
+        return item, {"transcript": delta}
 
     def _process_audio_delta(self, event):
-        item_id = event['item_id']
-        content_index = event['content_index']
-        delta = event['delta']
+        item_id = event["item_id"]
+        content_index = event["content_index"]
+        delta = event["delta"]
         item = self.item_lookup.get(item_id)
         if not item:
             logger.debug(f'response.audio.delta: Item "{item_id}" not found')
             return None, None
         array_buffer = base64_to_array_buffer(delta)
         append_values = array_buffer.tobytes()
-        item['formatted']['audio'] += [append_values]
-        return item, {'audio': append_values}
+        item["formatted"]["audio"] += [append_values]
+        return item, {"audio": append_values}
 
     def _process_text_delta(self, event):
-        item_id = event['item_id']
-        content_index = event['content_index']
-        delta = event['delta']
+        item_id = event["item_id"]
+        content_index = event["content_index"]
+        delta = event["delta"]
         item = self.item_lookup.get(item_id)
         if not item:
             raise Exception(f'response.text.delta: Item "{item_id}" not found')
-        item['content'][content_index]['text'] += delta
-        item['formatted']['text'] += delta
-        return item, {'text': delta}
+        item["content"][content_index]["text"] += delta
+        item["formatted"]["text"] += delta
+        return item, {"text": delta}
 
     def _process_function_call_arguments_delta(self, event):
-        item_id = event['item_id']
-        delta = event['delta']
+        item_id = event["item_id"]
+        delta = event["delta"]
         item = self.item_lookup.get(item_id)
         if not item:
-            raise Exception(f'response.function_call_arguments.delta: Item "{item_id}" not found')
-        item['arguments'] += delta
-        item['formatted']['tool']['arguments'] += delta
-        return item, {'arguments': delta}
+            raise Exception(
+                f'response.function_call_arguments.delta: Item "{item_id}" not found'
+            )
+        item["arguments"] += delta
+        item["formatted"]["tool"]["arguments"] += delta
+        return item, {"arguments": delta}
 
 
 class RealtimeClient(RealtimeEventHandler):
@@ -363,8 +389,8 @@ class RealtimeClient(RealtimeEventHandler):
             "voice": "shimmer",
             "input_audio_format": "pcm16",
             "output_audio_format": "pcm16",
-            "input_audio_transcription": { "model": 'whisper-1' },
-            "turn_detection": { "type": 'server_vad' },
+            "input_audio_transcription": {"model": "whisper-1"},
+            "turn_detection": {"type": "server_vad"},
             "tools": [],
             "tool_choice": "auto",
             "temperature": 0.8,
@@ -382,7 +408,7 @@ class RealtimeClient(RealtimeEventHandler):
         self.conversation = RealtimeConversation()
         self._reset_config()
         self._add_api_event_handlers()
-        
+
     def _reset_config(self):
         self.session_created = False
         self.tools = {}
@@ -397,16 +423,25 @@ class RealtimeClient(RealtimeEventHandler):
         self.realtime.on("server.response.created", self._process_event)
         self.realtime.on("server.response.output_item.added", self._process_event)
         self.realtime.on("server.response.content_part.added", self._process_event)
-        self.realtime.on("server.input_audio_buffer.speech_started", self._on_speech_started)
-        self.realtime.on("server.input_audio_buffer.speech_stopped", self._on_speech_stopped)
+        self.realtime.on(
+            "server.input_audio_buffer.speech_started", self._on_speech_started
+        )
+        self.realtime.on(
+            "server.input_audio_buffer.speech_stopped", self._on_speech_stopped
+        )
         self.realtime.on("server.conversation.item.created", self._on_item_created)
         self.realtime.on("server.conversation.item.truncated", self._process_event)
         self.realtime.on("server.conversation.item.deleted", self._process_event)
-        self.realtime.on("server.conversation.item.input_audio_transcription.completed", self._process_event)
+        self.realtime.on(
+            "server.conversation.item.input_audio_transcription.completed",
+            self._process_event,
+        )
         self.realtime.on("server.response.audio_transcript.delta", self._process_event)
         self.realtime.on("server.response.audio.delta", self._process_event)
         self.realtime.on("server.response.text.delta", self._process_event)
-        self.realtime.on("server.response.function_call_arguments.delta", self._process_event)
+        self.realtime.on(
+            "server.response.function_call_arguments.delta", self._process_event
+        )
         self.realtime.on("server.response.output_item.done", self._on_output_item_done)
 
     def _log_event(self, event):
@@ -453,22 +488,28 @@ class RealtimeClient(RealtimeEventHandler):
             if not tool_config:
                 raise Exception(f'Tool "{tool["name"]}" has not been added')
             result = await tool_config["handler"](**json_arguments)
-            await self.realtime.send("conversation.item.create", {
-                "item": {
-                    "type": "function_call_output",
-                    "call_id": tool["call_id"],
-                    "output": json.dumps(result),
-                }
-            })
+            await self.realtime.send(
+                "conversation.item.create",
+                {
+                    "item": {
+                        "type": "function_call_output",
+                        "call_id": tool["call_id"],
+                        "output": json.dumps(result),
+                    }
+                },
+            )
         except Exception as e:
-            logger.error(f"Tool call error: {json.dumps({"error": str(e)})}")
-            await self.realtime.send("conversation.item.create", {
-                "item": {
-                    "type": "function_call_output",
-                    "call_id": tool["call_id"],
-                    "output": json.dumps({"error": str(e)}),
-                }
-            })
+            logger.error(f"Tool call error: {json.dumps({'error': str(e)})}")
+            await self.realtime.send(
+                "conversation.item.create",
+                {
+                    "item": {
+                        "type": "function_call_output",
+                        "call_id": tool["call_id"],
+                        "output": json.dumps({"error": str(e)}),
+                    }
+                },
+            )
         await self.create_response()
 
     def is_connected(self):
@@ -509,7 +550,9 @@ class RealtimeClient(RealtimeEventHandler):
             raise Exception("Missing tool name in definition")
         name = definition["name"]
         if name in self.tools:
-            raise Exception(f'Tool "{name}" already added. Please use .removeTool("{name}") before trying to add again.')
+            raise Exception(
+                f'Tool "{name}" already added. Please use .removeTool("{name}") before trying to add again.'
+            )
         if not callable(handler):
             raise Exception(f'Tool "{name}" handler must be a function')
         self.tools[name] = {"definition": definition, "handler": handler}
@@ -532,18 +575,15 @@ class RealtimeClient(RealtimeEventHandler):
             {**tool_definition, "type": "function"}
             for tool_definition in self.session_config.get("tools", [])
         ] + [
-            {**self.tools[key]["definition"], "type": "function"}
-            for key in self.tools
+            {**self.tools[key]["definition"], "type": "function"} for key in self.tools
         ]
         session = {**self.session_config, "tools": use_tools}
         if self.realtime.is_connected():
             await self.realtime.send("session.update", {"session": session})
         return True
-    
+
     async def create_conversation_item(self, item):
-        await self.realtime.send("conversation.item.create", {
-            "item": item
-        })
+        await self.realtime.send("conversation.item.create", {"item": item})
 
     async def send_user_message_content(self, content=[]):
         if content:
@@ -551,21 +591,27 @@ class RealtimeClient(RealtimeEventHandler):
                 if c["type"] == "input_audio":
                     if isinstance(c["audio"], (bytes, bytearray)):
                         c["audio"] = array_buffer_to_base64(c["audio"])
-            await self.realtime.send("conversation.item.create", {
-                "item": {
-                    "type": "message",
-                    "role": "user",
-                    "content": content,
-                }
-            })
+            await self.realtime.send(
+                "conversation.item.create",
+                {
+                    "item": {
+                        "type": "message",
+                        "role": "user",
+                        "content": content,
+                    }
+                },
+            )
         await self.create_response()
         return True
 
     async def append_input_audio(self, array_buffer):
         if len(array_buffer) > 0:
-            await self.realtime.send("input_audio_buffer.append", {
-                "audio": array_buffer_to_base64(np.array(array_buffer)),
-            })
+            await self.realtime.send(
+                "input_audio_buffer.append",
+                {
+                    "audio": array_buffer_to_base64(np.array(array_buffer)),
+                },
+            )
             self.input_audio_buffer.extend(array_buffer)
         return True
 
@@ -588,16 +634,25 @@ class RealtimeClient(RealtimeEventHandler):
             if item["type"] != "message":
                 raise Exception('Can only cancelResponse messages with type "message"')
             if item["role"] != "assistant":
-                raise Exception('Can only cancelResponse messages with role "assistant"')
+                raise Exception(
+                    'Can only cancelResponse messages with role "assistant"'
+                )
             await self.realtime.send("response.cancel")
-            audio_index = next((i for i, c in enumerate(item["content"]) if c["type"] == "audio"), -1)
+            audio_index = next(
+                (i for i, c in enumerate(item["content"]) if c["type"] == "audio"), -1
+            )
             if audio_index == -1:
                 raise Exception("Could not find audio on item to cancel")
-            await self.realtime.send("conversation.item.truncate", {
-                "item_id": id,
-                "content_index": audio_index,
-                "audio_end_ms": int((sample_count / self.conversation.default_frequency) * 1000),
-            })
+            await self.realtime.send(
+                "conversation.item.truncate",
+                {
+                    "item_id": id,
+                    "content_index": audio_index,
+                    "audio_end_ms": int(
+                        (sample_count / self.conversation.default_frequency) * 1000
+                    ),
+                },
+            )
             return {"item": item}
 
     async def wait_for_next_item(self):

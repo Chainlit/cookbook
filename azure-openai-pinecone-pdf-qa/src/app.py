@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
-from langchain_openai import AzureOpenAIEmbeddings,AzureChatOpenAI
-from dotenv import load_dotenv 
+from langchain_openai import AzureOpenAIEmbeddings, AzureChatOpenAI
+from dotenv import load_dotenv
 from langchain.schema import Document
 from langchain_pinecone import Pinecone
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -24,58 +24,72 @@ load_dotenv()
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_ADA_DEPLOYMENT_VERSION = os.getenv("AZURE_OPENAI_ADA_DEPLOYMENT_VERSION")
-AZURE_OPENAI_CHAT_DEPLOYMENT_VERSION= os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_VERSION")
-AZURE_OPENAI_ADA_EMBEDDING_DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_ADA_EMBEDDING_DEPLOYMENT_NAME")
-AZURE_OPENAI_ADA_EMBEDDING_MODEL_NAME = os.getenv("AZURE_OPENAI_ADA_EMBEDDING_MODEL_NAME")
+AZURE_OPENAI_CHAT_DEPLOYMENT_VERSION = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_VERSION")
+AZURE_OPENAI_ADA_EMBEDDING_DEPLOYMENT_NAME = os.getenv(
+    "AZURE_OPENAI_ADA_EMBEDDING_DEPLOYMENT_NAME"
+)
+AZURE_OPENAI_ADA_EMBEDDING_MODEL_NAME = os.getenv(
+    "AZURE_OPENAI_ADA_EMBEDDING_MODEL_NAME"
+)
 AZURE_OPENAI_CHAT_DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME")
 
 # Pinecone configuration
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-index_name = 'primer'
+index_name = "primer"
 
-#Initialize Pinecone
+# Initialize Pinecone
 pc = Pinecone(api_key=PINECONE_API_KEY)
 if index_name not in pc.list_indexes().names():
     pc.create_index(
         name=index_name,
         dimension=1536,
         metric="cosine",
-        spec=ServerlessSpec(cloud="aws",region="us-west-2") 
+        spec=ServerlessSpec(cloud="aws", region="us-west-2"),
     )
 
-#Initialize Azure OpenAI embeddings
-    
+# Initialize Azure OpenAI embeddings
+
 embeddings = AzureOpenAIEmbeddings(
-deployment=AZURE_OPENAI_ADA_EMBEDDING_DEPLOYMENT_NAME,
-model=AZURE_OPENAI_ADA_EMBEDDING_MODEL_NAME,
-azure_endpoint=AZURE_OPENAI_ENDPOINT,
-openai_api_key=AZURE_OPENAI_API_KEY,
-openai_api_version=AZURE_OPENAI_ADA_DEPLOYMENT_VERSION
+    deployment=AZURE_OPENAI_ADA_EMBEDDING_DEPLOYMENT_NAME,
+    model=AZURE_OPENAI_ADA_EMBEDDING_MODEL_NAME,
+    azure_endpoint=AZURE_OPENAI_ENDPOINT,
+    openai_api_key=AZURE_OPENAI_API_KEY,
+    openai_api_version=AZURE_OPENAI_ADA_DEPLOYMENT_VERSION,
 )
+
+
 def process_pdfs(pdf_storage_path: str):
     pdf_directory = Path(pdf_storage_path)
     docs = []
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    
+
     # Load PDFs and split into documents
     for pdf_path in pdf_directory.glob("*.pdf"):
         loader = PyMuPDFLoader(str(pdf_path))
         documents = loader.load()
         docs += text_splitter.split_documents(documents)
-    
 
     # Convert text to embeddings
     for doc in docs:
         embedding = embeddings.embed_query(doc.page_content)
         random_id = str(uuid.uuid4())
-        #print (embedding)
+        # print (embedding)
         doc_search = pc.Index(index_name)
-        #doc_search = Pinecone (doc_search, embeddings.embed_query, doc.page_content, random_id)
-    
-    # Store the vector in Pinecone index
-        doc_search.upsert(vectors = [{"id": random_id, "values": embedding, "metadata": {"source": doc.page_content}}])
+        # doc_search = Pinecone (doc_search, embeddings.embed_query, doc.page_content, random_id)
+
+        # Store the vector in Pinecone index
+        doc_search.upsert(
+            vectors=[
+                {
+                    "id": random_id,
+                    "values": embedding,
+                    "metadata": {"source": doc.page_content},
+                }
+            ]
+        )
         print("Vector stored in Pinecone index successfully.")
     return doc_search
+
 
 doc_search = process_pdfs(PDF_STORAGE_PATH)
 
@@ -85,6 +99,7 @@ namespace = None
 from langchain.memory import ChatMessageHistory, ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain.vectorstores.pinecone import Pinecone
+
 
 @cl.on_chat_start
 async def start():
@@ -103,13 +118,13 @@ async def start():
     )
 
     chain = ConversationalRetrievalChain.from_llm(
-        llm = AzureChatOpenAI(
-        api_key=AZURE_OPENAI_API_KEY,
-        azure_endpoint=AZURE_OPENAI_ENDPOINT,
-        api_version=AZURE_OPENAI_CHAT_DEPLOYMENT_VERSION,
-        openai_api_type="azure",
-        azure_deployment=AZURE_OPENAI_CHAT_DEPLOYMENT_NAME,
-        streaming=True
+        llm=AzureChatOpenAI(
+            api_key=AZURE_OPENAI_API_KEY,
+            azure_endpoint=AZURE_OPENAI_ENDPOINT,
+            api_version=AZURE_OPENAI_CHAT_DEPLOYMENT_VERSION,
+            openai_api_type="azure",
+            azure_deployment=AZURE_OPENAI_CHAT_DEPLOYMENT_NAME,
+            streaming=True,
         ),
         chain_type="stuff",
         retriever=docsearch.as_retriever(),
@@ -117,6 +132,7 @@ async def start():
         return_source_documents=True,
     )
     cl.user_session.set("chain", chain)
+
 
 @cl.on_message
 async def main(message: cl.Message):

@@ -79,9 +79,9 @@ class FunctionManager:
                     ),
                     "description": param_description,
                 }
-                function_info["parameters"]["properties"][
-                    parameter_name
-                ] = parameter_description
+                function_info["parameters"]["properties"][parameter_name] = (
+                    parameter_description
+                )
 
                 # If the parameter has no default value, add it to the required field.
                 if parameter.default == inspect.Parameter.empty:

@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+
 load_dotenv()
 import chainlit as cl
 
@@ -34,9 +35,10 @@ from langgraph.prebuilt import ToolInvocation
 import json
 from langchain_core.messages import FunctionMessage
 
+
 # Define the function that determines whether to continue or not
 def should_continue(state):
-    messages = state['messages']
+    messages = state["messages"]
     last_message = messages[-1]
     # If there is no function call, then we finish
     if "function_call" not in last_message.additional_kwargs:
@@ -45,23 +47,27 @@ def should_continue(state):
     else:
         return "continue"
 
+
 # Define the function that calls the model
 def call_model(state):
-    messages = state['messages']
+    messages = state["messages"]
     response = model.invoke(messages)
     # We return a list, because this will get added to the existing list
     return {"messages": [response]}
 
+
 # Define the function to execute tools
 def call_tool(state):
-    messages = state['messages']
+    messages = state["messages"]
     # Based on the continue condition
     # we know the last message involves a function call
     last_message = messages[-1]
     # We construct an ToolInvocation from the function_call
     action = ToolInvocation(
         tool=last_message.additional_kwargs["function_call"]["name"],
-        tool_input=json.loads(last_message.additional_kwargs["function_call"]["arguments"]),
+        tool_input=json.loads(
+            last_message.additional_kwargs["function_call"]["arguments"]
+        ),
     )
     # We call the tool_executor and get back a response
     response = tool_executor.invoke(action)
@@ -72,6 +78,7 @@ def call_tool(state):
 
 
 from langgraph.graph import StateGraph, END
+
 # Define a new graph
 workflow = StateGraph(AgentState)
 
@@ -100,13 +107,13 @@ workflow.add_conditional_edges(
         # If `tools`, then we call the tool node.
         "continue": "action",
         # Otherwise we finish.
-        "end": END
-    }
+        "end": END,
+    },
 )
 
 # We now add a normal edge from `tools` to `agent`.
 # This means that after `tools` is called, `agent` node is called next.
-workflow.add_edge('action', 'agent')
+workflow.add_edge("action", "agent")
 
 # Finally, we compile it!
 # This compiles it into a LangChain Runnable,
@@ -117,17 +124,29 @@ app = workflow.compile()
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 
+
 @cl.on_message
 async def run_convo(message: cl.Message):
-    #"what is the weather in sf"
+    # "what is the weather in sf"
     inputs = {"messages": [HumanMessage(content=message.content)]}
-    
-    res = app.invoke(inputs, config=RunnableConfig(callbacks=[
-        cl.LangchainCallbackHandler(
-            to_ignore=["ChannelRead", "RunnableLambda", "ChannelWrite", "__start__", "_execute"]
-            # can add more into the to_ignore: "agent:edges", "call_model"
-            # to_keep=
 
-        )]))
+    res = app.invoke(
+        inputs,
+        config=RunnableConfig(
+            callbacks=[
+                cl.LangchainCallbackHandler(
+                    to_ignore=[
+                        "ChannelRead",
+                        "RunnableLambda",
+                        "ChannelWrite",
+                        "__start__",
+                        "_execute",
+                    ]
+                    # can add more into the to_ignore: "agent:edges", "call_model"
+                    # to_keep=
+                )
+            ]
+        ),
+    )
 
     await cl.Message(content=res["messages"][-1].content).send()

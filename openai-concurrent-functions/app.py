@@ -3,9 +3,11 @@ import json, os, asyncio
 import chainlit as cl
 
 from dotenv import load_dotenv
+
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 client = AsyncOpenAI(api_key=api_key)
+
 
 # Example dummy function hard coded to return the same weather
 # In production, this could be your backend API or an external API
@@ -15,32 +17,37 @@ async def get_current_weather(location, unit="fahrenheit"):
     if "tokyo" in location.lower():
         return json.dumps({"location": "Tokyo", "temperature": "10", "unit": unit})
     elif "san francisco" in location.lower():
-        return json.dumps({"location": "San Francisco", "temperature": "72", "unit": unit})
+        return json.dumps(
+            {"location": "San Francisco", "temperature": "72", "unit": unit}
+        )
     elif "paris" in location.lower():
         return json.dumps({"location": "Paris", "temperature": "22", "unit": unit})
     else:
         return json.dumps({"location": location, "temperature": "unknown"})
 
+
 tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "get_current_weather",
-                "description": "Get the current weather in a given location",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {
-                            "type": "string",
-                            "description": "The city and state, e.g. San Francisco, CA",
-                        },
-                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+    {
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "description": "Get the current weather in a given location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA",
                     },
-                    "required": ["location"],
+                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
                 },
+                "required": ["location"],
             },
-        }
-    ]
+        },
+    }
+]
+
+
 @cl.on_chat_start
 def start_chat():
     cl.user_session.set(
@@ -54,7 +61,7 @@ async def run_conversation(message: cl.Message):
     message_history = cl.user_session.get("message_history")
     message_history.append({"role": "user", "content": message.content})
     # Step 1: send the conversation and available functions to the model
-    
+
     msg = cl.Message(author="Assistant", content="")
     await msg.send()
 
@@ -65,7 +72,7 @@ async def run_conversation(message: cl.Message):
         tool_choice="auto",  # auto is default, but we'll be explicit
     )
     response_message = response.choices[0].message
-    
+
     msg.content = response_message.content or ""
     await msg.update()
 
@@ -77,7 +84,10 @@ async def run_conversation(message: cl.Message):
         available_functions = {
             "get_current_weather": get_current_weather,
         }  # only one function in this example, but you can have multiple
-        message_history.append(response_message)  # extend conversation with assistant's reply
+        message_history.append(
+            response_message
+        )  # extend conversation with assistant's reply
+
         # Step 4: send the info for each function call and function response to the model
         async def call_function(tool_call):
             function_name = tool_call.function.name
