@@ -18,7 +18,7 @@ async def thinking_step(user_message: str):
     message_history.append({"role": "user", "content": user_message})
     response = client.messages.create(
         model="claude-3-7-sonnet-latest",
-        system="You are a helpful assistant! Your goal is to provide the most accurate and truthful responses possible. ",
+        system="You are a helpful assistant! Your goal is to provide the most accurate and truthful responses possible.",
         max_tokens=64000,
         thinking={"type": "enabled", "budget_tokens": 20000},
         messages=message_history,
