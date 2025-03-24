@@ -1,1 +1,1 @@
-chainlit=>2.4.3
+chainlit=>2.4.301
