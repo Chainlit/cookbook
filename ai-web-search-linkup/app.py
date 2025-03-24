@@ -5,13 +5,11 @@ import chainlit as cl
 import tokeniser
 import litellm
 from linkup import LinkupClient
-from anthropic import AsyncAnthropic
 
 MAX_CONTEXT_WINDOW_TOKENS = 70000
 DEFAULT_MODEL = "anthropic/claude-3-5-sonnet-20240620"
 
 linkup_client = LinkupClient(api_key=os.environ["LINKUP_API_KEY"])
-anthropic_client = AsyncAnthropic()
 
 # Tool definitions
 SEARCH_TOOL = {
