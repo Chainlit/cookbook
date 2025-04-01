@@ -87,4 +87,8 @@ You can get your Linkup API key [here](https://app.linkup.so/api-keys)
 
 ## Note
 
-This is a demonstration project. While the implementation is straightforward, in a production environment, you should add proper error handling, implement retry mechanisms, and use a more robust architecture.
+This is a demonstration project. While the implementation is straightforward, in a production environment, you should:
+
+- Add proper error handling and implement retry mechanisms
+- Use a more robust architecture
+- Ensure that the message history strictly follows your LLM provider's requirements for message ordering (e.g., messages must alternate between user and assistant roles, and always start with a user message)
