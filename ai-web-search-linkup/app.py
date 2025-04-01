@@ -48,34 +48,40 @@ COMMANDS = [
 
 def truncate_messages(messages: List[Dict[str, Any]], max_tokens: int = MAX_CONTEXT_WINDOW_TOKENS) -> List[Dict[str, Any]]:
     """
-    Truncate conversation messages to fit within token limit while preserving
-    the latest messages and ensuring proper user-assistant ordering.
+    Truncate conversation messages to fit within token limit.
+    Simply keeps the most recent messages that fit within the token budget.
+    Ensures the last message is not from the assistant.
 
     Args:
         messages: List of conversation messages
         max_tokens: Maximum allowed tokens
 
     Returns:
-        Truncated list of messages that starts with a user message
+        Truncated list of messages that fit within the token budget
     """
     if not messages:
         return []
 
     truncated = messages.copy()
+    
+    # Remove last message if it's from assistant
+    if truncated and truncated[-1]["role"] == "assistant":
+        truncated = truncated[:-1]
+
     total_tokens = 0
 
-    # Work backwards from the end
+    # Work backwards from the end to keep most recent messages
     for i in range(len(truncated) - 1, -1, -1):
-        msg_tokens = tokeniser.estimate_tokens(truncated[i]["content"])
-        total_tokens += msg_tokens
+        message_tokens = tokeniser.estimate_tokens(truncated[i]["content"])
+        total_tokens += message_tokens
         
         if total_tokens > max_tokens:
-            # If we need to truncate, ensure we start with a user message
-            truncated = truncated[i:]
-            if truncated and truncated[0]["role"] == "assistant":
-                truncated = truncated[1:]
+            truncated = truncated[i + 1:]
             break
 
+    # Double check: remove last message if it's from assistant after truncation
+    if truncated and truncated[-1]["role"] == "assistant":
+        truncated = truncated[:-1]
 
     return truncated
 
