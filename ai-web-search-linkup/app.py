@@ -49,38 +49,35 @@ COMMANDS = [
 def truncate_messages(messages: List[Dict[str, Any]], max_tokens: int = MAX_CONTEXT_WINDOW_TOKENS) -> List[Dict[str, Any]]:
     """
     Truncate conversation messages to fit within token limit while preserving
-    the latest user query.
+    the latest messages and ensuring proper user-assistant ordering.
 
     Args:
         messages: List of conversation messages
         max_tokens: Maximum allowed tokens
 
     Returns:
-        Truncated list of messages
+        Truncated list of messages that starts with a user message
     """
     if not messages:
         return []
 
     truncated = messages.copy()
+    total_tokens = 0
 
-    # Always keep the latest user query
-    user_query_tokens = tokeniser.estimate_tokens(truncated[-1]["content"])
-    remaining_tokens = max_tokens - user_query_tokens
-
-    # Work backwards from second-to-last message
-    cutoff_index = len(truncated) - 2
-
-    while cutoff_index > 0 and remaining_tokens > 0:
-        msg_tokens = tokeniser.estimate_tokens(
-            truncated[cutoff_index]["content"])
-
-        if remaining_tokens - msg_tokens < 0:
+    # Work backwards from the end
+    for i in range(len(truncated) - 1, -1, -1):
+        msg_tokens = tokeniser.estimate_tokens(truncated[i]["content"])
+        total_tokens += msg_tokens
+        
+        if total_tokens > max_tokens:
+            # If we need to truncate, ensure we start with a user message
+            truncated = truncated[i:]
+            if truncated and truncated[0]["role"] == "assistant":
+                truncated = truncated[1:]
             break
 
-        remaining_tokens -= msg_tokens
-        cutoff_index -= 1
 
-    return truncated[cutoff_index + 1:]
+    return truncated
 
 
 async def search_web(query: str, depth: str) -> str:
@@ -121,6 +118,9 @@ async def process_tool_calls(tool_calls: Dict, context_messages: List[Dict[str, 
         tool_calls: Dictionary of tool calls from the model
         context_messages: Conversation context
         msg: Chainlit message object for streaming response
+        
+    Returns:
+        The generated response after processing tool calls
     """
     # Show temporary "searching" message
     tmp_message = cl.Message(content="Searching the web...", author="Tool")
@@ -146,8 +146,10 @@ async def process_tool_calls(tool_calls: Dict, context_messages: List[Dict[str, 
 
         except json.JSONDecodeError:
             await msg.stream_token("Error: Failed to parse tool arguments")
+            return "Error: Failed to parse tool arguments"
         except Exception as e:
             await msg.stream_token(f"Error: Tool execution failed - {str(e)}")
+            return f"Error: Tool execution failed - {str(e)}"
 
     # Remove temporary message
     await tmp_message.remove()
@@ -157,24 +159,26 @@ async def process_tool_calls(tool_calls: Dict, context_messages: List[Dict[str, 
 
     await msg.stream_token("\n\n")
 
+    tool_response = ""
     stream = await litellm.acompletion(
         model=DEFAULT_MODEL,
         messages=[
             {"role": "system", "content": system_prompt}, *context_messages],
         stream=True
-
     )
 
     async for chunk in stream:
         if chunk.choices[0].delta.content:
+            tool_response += chunk.choices[0].delta.content
             await msg.stream_token(chunk.choices[0].delta.content)
+            
+    return tool_response
 
 
 async def run_with_tools(messages: List[Dict[str, Any]], selected_tool: str = None) -> str:
     """
     Run a conversation through Claude with function calling enabled.
 
-    Args:
     Args:
         messages: List of conversation messages
         selected_tool: Optional tool to force using
@@ -238,15 +242,20 @@ async def run_with_tools(messages: List[Dict[str, Any]], selected_tool: str = No
         # Send initial message
         await msg.send()
 
-        # Process any tool calls
+        # Process any tool calls and combine responses
         if current_tool_calls:
             if len(response_content) == 0:
-                # Display initial message if no response content. Can be the case when the user explicitly asks for a tool.
+                # Display initial message if no response content.
+                # Can be the case when the user explicitly asks for a tool.
                 response_content = "To answer this question thoroughly, I'll need to use my tools !"
 
                 await msg.stream_token(response_content)
                 await msg.update()
-            await process_tool_calls(current_tool_calls, context_messages, msg)
+                
+            tool_response = await process_tool_calls(current_tool_calls, context_messages, msg)
+            
+            if tool_response:
+                response_content = f"{response_content}\n\n{tool_response}"
 
         # Update the message with final content
         await msg.update()
