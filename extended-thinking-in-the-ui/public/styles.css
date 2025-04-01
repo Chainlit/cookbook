@@ -1,0 +1,18 @@
+#theme-toggle,
+#new-chat-button {
+  display: none !important;
+}
+
+.watermark {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0px !important;
+  width: 0px !important;
+  overflow: hidden !important;
+}
+
+#chat-input:empty::before {
+  content: 'Ask anything';
+}

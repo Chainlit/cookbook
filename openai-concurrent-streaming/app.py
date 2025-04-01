@@ -29,6 +29,7 @@ async def start_chat():
         ],
     )
 
+
 async def answer_as(name):
     message_history = cl.user_session.get("message_history")
     msg = cl.Message(author=name, content="")

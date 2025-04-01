@@ -36,8 +36,12 @@ async def start():
     Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
     Settings.context_window = 4096
 
-    service_context = ServiceContext.from_defaults(callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]))
-    query_engine = index.as_query_engine(streaming=True, similarity_top_k=2, service_context=service_context)
+    service_context = ServiceContext.from_defaults(
+        callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()])
+    )
+    query_engine = index.as_query_engine(
+        streaming=True, similarity_top_k=2, service_context=service_context
+    )
     cl.user_session.set("query_engine", query_engine)
 
     await cl.Message(
@@ -47,7 +51,7 @@ async def start():
 
 @cl.on_message
 async def main(message: cl.Message):
-    query_engine = cl.user_session.get("query_engine") # type: RetrieverQueryEngine
+    query_engine = cl.user_session.get("query_engine")  # type: RetrieverQueryEngine
 
     msg = cl.Message(content="", author="Assistant")
 

@@ -48,9 +48,7 @@ async def gen_query(human_query: str):
 
     # Call OpenAI and stream the message
     stream_resp = await openai_client.chat.completions.create(
-        messages=messages,
-        stream=True,
-        **settings
+        messages=messages, stream=True, **settings
     )
     async for part in stream_resp:
         token = part.choices[0].delta.content or ""
@@ -81,11 +79,11 @@ async def execute_query(query):
 async def analyze(table):
     current_step = cl.context.current_step
     today = str(date.today())
-    
+
     messages = [
         {
             "role": "user",
-            "content": explain_query_result_prompt.format(date=today, table=table)
+            "content": explain_query_result_prompt.format(date=today, table=table),
         }
     ]
 
@@ -93,9 +91,7 @@ async def analyze(table):
 
     # Call OpenAI and stream the message
     stream = await openai_client.chat.completions.create(
-        messages=messages,
-        stream=True,
-        **settings
+        messages=messages, stream=True, **settings
     )
     async for part in stream:
         token = part.choices[0].delta.content or ""

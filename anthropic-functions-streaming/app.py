@@ -1,9 +1,11 @@
 import chainlit as cl
 import json
 from anthropic import AsyncAnthropic
+
 SYSTEM = "you are a helpful assistant."
 MODEL_NAME = "claude-3-5-sonnet-20240620"
 c = AsyncAnthropic()
+
 
 # hard coded weather tool
 async def get_current_weather(location, unit):
@@ -18,11 +20,12 @@ async def get_current_weather(location, unit):
 
     return json.dumps(weather_info)
 
+
 # simple calculator tool
 async def calculator(operation, operand1, operand2):
     """Perform a basic arithmetic operation"""
     result = None
-    
+
     if operation == "add":
         result = operand1 + operand2
     elif operation == "subtract":
@@ -41,10 +44,11 @@ async def calculator(operation, operand1, operand2):
         "operation": operation,
         "operand1": operand1,
         "operand2": operand2,
-        "result": result
+        "result": result,
     }
-    
+
     return json.dumps(calculation_info)
+
 
 # tool descriptions
 tools = [
@@ -56,16 +60,16 @@ tools = [
             "properties": {
                 "location": {
                     "type": "string",
-                    "description": "The city and state, e.g. 'San Francisco, CA'"
+                    "description": "The city and state, e.g. 'San Francisco, CA'",
                 },
                 "unit": {
                     "type": "string",
                     "enum": ["celsius", "fahrenheit"],
-                    "description": "The unit of temperature to use (celsius or fahrenheit)"
-                }
+                    "description": "The unit of temperature to use (celsius or fahrenheit)",
+                },
             },
-            "required": ["location"]
-        }
+            "required": ["location"],
+        },
     },
     {
         "name": "calculator",
@@ -76,27 +80,19 @@ tools = [
                 "operation": {
                     "type": "string",
                     "enum": ["add", "subtract", "multiply", "divide"],
-                    "description": "The arithmetic operation to perform."
+                    "description": "The arithmetic operation to perform.",
                 },
-                "operand1": {
-                    "type": "number",
-                    "description": "The first operand."
-                },
-                "operand2": {
-                    "type": "number",
-                    "description": "The second operand."
-                }
+                "operand1": {"type": "number", "description": "The first operand."},
+                "operand2": {"type": "number", "description": "The second operand."},
             },
-            "required": ["operation", "operand1", "operand2"]
-        }
-    }
+            "required": ["operation", "operand1", "operand2"],
+        },
+    },
 ]
 
 # tool mappings
-TOOL_FUNCTIONS = {
-    "get_current_weather": get_current_weather,
-    "calculator": calculator
-}
+TOOL_FUNCTIONS = {"get_current_weather": get_current_weather, "calculator": calculator}
+
 
 # send chat messages to claude api
 async def call_claude(chat_messages):
@@ -111,38 +107,43 @@ async def call_claude(chat_messages):
     ) as stream:
         async for text in stream.text_stream:
             await msg.stream_token(text)
-    
+
     await msg.send()
     response = await stream.get_final_message()
 
     return response
+
 
 # initialise chat
 @cl.on_chat_start
 async def start_chat():
     cl.user_session.set("chat_messages", [])
 
+
 # route to functions based on tool call
-@cl.step(type="tool") 
+@cl.step(type="tool")
 async def call_tool(tool_use):
     tool_name = tool_use.name
     tool_input = tool_use.input
-    
+
     current_step = cl.context.current_step
     current_step.name = tool_name
-    
+
     tool_function = TOOL_FUNCTIONS.get(tool_name)
-    
+
     if tool_function:
         try:
             current_step.output = await tool_function(**tool_input)
         except TypeError:
-            current_step.output = json.dumps({"error": f"Invalid input for {tool_name}"})
+            current_step.output = json.dumps(
+                {"error": f"Invalid input for {tool_name}"}
+            )
     else:
         current_step.output = json.dumps({"error": f"Invalid tool: {tool_name}"})
-    
+
     current_step.language = "json"
     return current_step.output
+
 
 # main chat
 @cl.on_message

@@ -45,14 +45,22 @@ def _generate_image(prompt: str, init_image=None):
         seed=992446758,  # If a seed is provided, the resulting generated image will be deterministic.
         # What this means is that as long as all generation parameters remain the same, you can always recall the same image simply by generating it again.
         # Note: This isn't quite the case for CLIP Guided generations, which we tackle in the CLIP Guidance documentation.
-        steps=int(cl_chat_settings["SAI_Steps"]),  # Amount of inference steps performed on image generation. Defaults to 30.
-        cfg_scale=cl_chat_settings["SAI_Cfg_Scale"],  # Influences how strongly your generation is guided to match your prompt.
+        steps=int(
+            cl_chat_settings["SAI_Steps"]
+        ),  # Amount of inference steps performed on image generation. Defaults to 30.
+        cfg_scale=cl_chat_settings[
+            "SAI_Cfg_Scale"
+        ],  # Influences how strongly your generation is guided to match your prompt.
         # Setting this value higher increases the strength in which it tries to match your prompt.
         # Defaults to 7.0 if not specified.
-        width=int(cl_chat_settings["SAI_Width"]),  # Generation width, defaults to 512 if not included.
-        height=int(cl_chat_settings["SAI_Height"]),  # Generation height, defaults to 512 if not included.
+        width=int(
+            cl_chat_settings["SAI_Width"]
+        ),  # Generation width, defaults to 512 if not included.
+        height=int(
+            cl_chat_settings["SAI_Height"]
+        ),  # Generation height, defaults to 512 if not included.
         samples=1,  # Number of images to generate, defaults to 1 if not included.
-        sampler=generation.SAMPLER_K_EULER  # Choose which sampler we want to denoise our generation with.
+        sampler=generation.SAMPLER_K_EULER,  # Choose which sampler we want to denoise our generation with.
         # Defaults to k_dpmpp_2m if not specified. Clip Guidance only supports ancestral samplers.
         # (Available Samplers: ddim, plms, k_euler, k_euler_ancestral, k_heun, k_dpm_2, k_dpm_2_ancestral, k_dpmpp_2s_ancestral, k_lms, k_dpmpp_2m, k_dpmpp_sde)
     )

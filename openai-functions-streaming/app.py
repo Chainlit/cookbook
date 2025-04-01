@@ -79,6 +79,7 @@ async def call_tool(tool_call_id, name, arguments, message_history):
         }
     )
 
+
 async def call_gpt4(message_history):
     settings = {
         "model": "gpt-3.5-turbo",

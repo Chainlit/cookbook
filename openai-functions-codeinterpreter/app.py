@@ -197,9 +197,9 @@ async def process_new_delta(
         if new_delta.function_call.arguments:
             if "arguments" not in openai_message["function_call"]:
                 openai_message["function_call"]["arguments"] = ""
-            openai_message["function_call"][
-                "arguments"
-            ] += new_delta.function_call.arguments
+            openai_message["function_call"]["arguments"] += (
+                new_delta.function_call.arguments
+            )
             await function_ui_message.stream_token(new_delta.function_call.arguments)
     return openai_message, content_ui_message, function_ui_message
 

@@ -7,16 +7,19 @@ import chainlit as cl
 
 from dotenv import load_dotenv
 import os, time
+
 load_dotenv()
 
 
 hl = HumanLayer.cloud(verbose=True)
+
 
 # add can be called without approval
 @cl.step(type="tool")
 async def fetch_active_orders(email: str) -> int:
     """Fetch active orders."""
     return [1]
+
 
 @cl.step(type="tool")
 async def reimburse_order(order_id, reason) -> int:
@@ -37,7 +40,9 @@ async def reimburse_order(order_id, reason) -> int:
             function_response_json = json.dumps(True)
         else:
             function_response_json = json.dumps(
-                {"error": f"call {call.spec.fn} not approved, comment was {call.status.comment}"}
+                {
+                    "error": f"call {call.spec.fn} not approved, comment was {call.status.comment}"
+                }
             )
         step.output = function_response_json
     return function_response_json
@@ -82,7 +87,9 @@ math_tools_openai = [
 logger = logging.getLogger(__name__)
 
 
-async def run_chain(messages: list[dict], tools_openai: list[dict], tools_map: dict) -> str:
+async def run_chain(
+    messages: list[dict], tools_openai: list[dict], tools_map: dict
+) -> str:
     client = AsyncOpenAI()
     response = await client.chat.completions.create(
         model="gpt-4o",
@@ -95,7 +102,9 @@ async def run_chain(messages: list[dict], tools_openai: list[dict], tools_map: d
         response_message = response.choices[0].message
         tool_calls = response_message.tool_calls
         if tool_calls:
-            messages.append(response_message)  # extend conversation with assistant's reply
+            messages.append(
+                response_message
+            )  # extend conversation with assistant's reply
             logger.info("last message led to %s tool calls", len(tool_calls))
             for tool_call in tool_calls:
                 function_name = tool_call.function.name
@@ -114,7 +123,11 @@ async def run_chain(messages: list[dict], tools_openai: list[dict], tools_map: d
                         }
                     )
 
-                logger.info("tool %s responded with %s", function_name, function_response_json[:200])
+                logger.info(
+                    "tool %s responded with %s",
+                    function_name,
+                    function_response_json[:200],
+                )
                 messages.append(
                     {
                         "tool_call_id": tool_call.id,
@@ -132,13 +145,20 @@ async def run_chain(messages: list[dict], tools_openai: list[dict], tools_map: d
 
     return response.choices[0].message.content
 
+
 @cl.on_chat_start
 def start_chat():
     cl.user_session.set(
         "message_history",
         # could pass user email as a parameter
-        [{"role": "system", "content": f"You are a helpful assistant, helping john@gmail.com. If the user asks for anything that requires order information, you should use the fetch_active_orders tool first."}],
+        [
+            {
+                "role": "system",
+                "content": f"You are a helpful assistant, helping john@gmail.com. If the user asks for anything that requires order information, you should use the fetch_active_orders tool first.",
+            }
+        ],
     )
+
 
 @cl.on_message
 async def on_message(message: cl.Message):

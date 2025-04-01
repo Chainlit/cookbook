@@ -16,12 +16,8 @@ def call_model(messages):
     resp = requests.post(
         f"https://model-{model_id}.api.baseten.co/production/predict",
         headers={"Authorization": f"Api-Key {baseten_api_key}"},
-        json={
-            "messages": messages,
-            "max_tokens": 1024,
-            "temperature": 0.7
-        },
-        stream=True
+        json={"messages": messages, "max_tokens": 1024, "temperature": 0.7},
+        stream=True,
     )
 
     # Stream the generated tokens
@@ -33,8 +29,7 @@ def call_model(messages):
 async def set_starters():
     return [
         cl.Starter(
-            label="Reflection-70B",
-            message="how many R's are there in Strawberry?"
+            label="Reflection-70B", message="how many R's are there in Strawberry?"
         )
     ]
 
@@ -43,8 +38,7 @@ async def set_starters():
 def init_history():
     system_prompt = "You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags."
 
-    message_history = [
-        {"role": "system", "content": system_prompt}]
+    message_history = [{"role": "system", "content": system_prompt}]
     cl.user_session.set("history", message_history)
 
 
@@ -92,10 +86,12 @@ async def main(message: cl.Message):
         if chunk and (is_thinking or is_answering):
             await msg.stream_token(chunk)
 
-    raw_answer = raw_answer.replace("<|start_header_id|>assistant<|end_header_id|>\n\n", "")
+    raw_answer = raw_answer.replace(
+        "<|start_header_id|>assistant<|end_header_id|>\n\n", ""
+    )
     raw_answer = raw_answer.replace("<|eot_id|>", "")
 
     message_history.append({"role": "assistant", "content": raw_answer})
-    
+
     # Update the session history
     cl.user_session.set("history", message_history)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Example LangChain server exposes a retriever."""
+
 from fastapi import FastAPI, Request
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate

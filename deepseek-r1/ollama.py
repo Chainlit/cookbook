@@ -3,10 +3,8 @@ from openai import AsyncOpenAI
 
 import chainlit as cl
 
-client = AsyncOpenAI(
-    api_key="ollama",
-    base_url="http://localhost:11434/v1/"
-    )
+client = AsyncOpenAI(api_key="ollama", base_url="http://localhost:11434/v1/")
+
 
 @cl.on_message
 async def on_message(msg: cl.Message):
@@ -15,13 +13,13 @@ async def on_message(msg: cl.Message):
         model="deepseek-r1:8b",
         messages=[
             {"role": "system", "content": "You are an helpful assistant"},
-            *cl.chat_context.to_openai()
+            *cl.chat_context.to_openai(),
         ],
-        stream=True
+        stream=True,
     )
 
     thinking = False
-    
+
     # Streaming the thinking
     async with cl.Step(name="Thinking") as thinking_step:
         final_answer = cl.Message(content="")
@@ -32,17 +30,17 @@ async def on_message(msg: cl.Message):
             if delta.content == "<think>":
                 thinking = True
                 continue
-                
+
             if delta.content == "</think>":
                 thinking = False
                 thought_for = round(time.time() - start)
                 thinking_step.name = f"Thought for {thought_for}s"
                 await thinking_step.update()
                 continue
-            
+
             if thinking:
                 await thinking_step.stream_token(delta.content)
             else:
                 await final_answer.stream_token(delta.content)
-                
+
     await final_answer.send()

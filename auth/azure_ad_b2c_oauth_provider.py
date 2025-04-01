@@ -6,6 +6,7 @@ from chainlit.oauth_providers import OAuthProvider
 import json
 from cookbook.auth.validate_jwt import validate_jwt, decode_jwt
 
+
 class AzureADB2COAuthProvider(OAuthProvider):
     id = "azure-ad-b2c"
     env = [
@@ -41,10 +42,7 @@ class AzureADB2COAuthProvider(OAuthProvider):
             "scope": "openid offline_access https://graph.microsoft.com/User.Read",
         }
         async with httpx.AsyncClient() as client:
-            response = await client.post(
-                self.token_url,
-                data=payload
-            )
+            response = await client.post(self.token_url, data=payload)
             response.raise_for_status()
             response_json = response.json()
 
@@ -65,18 +63,21 @@ class AzureADB2COAuthProvider(OAuthProvider):
 
             print("Printing token: \n\t", token)
             print("Printing well_known: \n", json.dumps(well_known, indent=2))
-            key = validate_jwt(token,
-                               jwks_uri=well_known["jwks_uri"])
+            key = validate_jwt(token, jwks_uri=well_known["jwks_uri"])
             print("Printing key: \n", key)
-            b2c_user = decode_jwt(token,
-                                  key,
-                                  audience=os.environ.get('OAUTH_AZURE_AD_B2C_CLIENT_ID'),
-                                  issuer=self.iss_url)
+            b2c_user = decode_jwt(
+                token,
+                key,
+                audience=os.environ.get("OAUTH_AZURE_AD_B2C_CLIENT_ID"),
+                issuer=self.iss_url,
+            )
             print("Printing user object: \n", json.dumps(b2c_user, indent=2))
 
             try:
                 user = User(
-                    identifier=b2c_user["emails"][0] if "emails" in b2c_user else b2c_user["email"],
+                    identifier=b2c_user["emails"][0]
+                    if "emails" in b2c_user
+                    else b2c_user["email"],
                     metadata={"image": None, "provider": "azure-ad"},
                 )
                 return b2c_user, user

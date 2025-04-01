@@ -46,17 +46,19 @@ class ChainlitUserProxyAgent(UserProxyAgent):
                     content="Continue or provide feedback?",
                     actions=[
                         cl.Action(
-                            name="continue", payload={"value": "continue"}, label="✅ Continue"
+                            name="continue",
+                            payload={"value": "continue"},
+                            label="✅ Continue",
                         ),
                         cl.Action(
                             name="feedback",
                             payload={"value": "feedback"},
                             label="💬 Provide feedback",
                         ),
-                        cl.Action( 
+                        cl.Action(
                             name="exit",
-                            payload={"value": "exit"}, 
-                            label="🔚 Exit Conversation" 
+                            payload={"value": "exit"},
+                            label="🔚 Exit Conversation",
                         ),
                     ],
                 )

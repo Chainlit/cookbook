@@ -51,19 +51,21 @@ class ChainlitUserProxyAgent(UserProxyAgent):
                 cl.AskActionMessage,
                 content="Continue or provide feedback?",
                 actions=[
-                        cl.Action(
-                            name="continue", payload={"value": "continue"}, label="✅ Continue"
-                        ),
                     cl.Action(
-                            name="feedback",
-                            payload={"value": "feedback"},
-                            label="💬 Provide feedback",
-                        ),
+                        name="continue",
+                        payload={"value": "continue"},
+                        label="✅ Continue",
+                    ),
                     cl.Action(
-                            name="exit",
-                            payload={"value": "exit"},
-                            label="🔚 Exit Conversation"
-                        ),
+                        name="feedback",
+                        payload={"value": "feedback"},
+                        label="💬 Provide feedback",
+                    ),
+                    cl.Action(
+                        name="exit",
+                        payload={"value": "exit"},
+                        label="🔚 Exit Conversation",
+                    ),
                 ],
             )
             if res.get("payload").get("value") == "continue":
@@ -71,8 +73,7 @@ class ChainlitUserProxyAgent(UserProxyAgent):
             if res.get("payload").get("value") == "exit":
                 return "exit"
 
-        reply = await ask_helper(
-            cl.AskUserMessage, content=prompt, timeout=60)
+        reply = await ask_helper(cl.AskUserMessage, content=prompt, timeout=60)
 
         return reply["content"].strip()
 

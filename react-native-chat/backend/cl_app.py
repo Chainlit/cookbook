@@ -5,8 +5,7 @@ import chainlit as cl
 
 
 client = AsyncOpenAI(
-    api_key=os.environ["OPENAI_API_KEY"],
-    base_url=os.environ["BASE_URL"]
+    api_key=os.environ["OPENAI_API_KEY"], base_url=os.environ["BASE_URL"]
 )
 
 settings = {
@@ -17,6 +16,7 @@ settings = {
     "frequency_penalty": 0,
     "presence_penalty": 0,
 }
+
 
 @cl.on_chat_start
 async def on_chat_start():

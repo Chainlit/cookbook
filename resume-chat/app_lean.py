@@ -8,6 +8,7 @@ import chainlit as cl
 
 load_dotenv()
 
+
 @cl.password_auth_callback
 def auth():
     return cl.User(identifier="test")
@@ -23,12 +24,16 @@ async def on_chat_resume(thread: ThreadDict):
     cl.user_session.set("chat_history", [])
 
     # user_session = thread["metadata"]
-    
+
     for message in thread["steps"]:
         if message["type"] == "user_message":
-            cl.user_session.get("chat_history").append({"role": "user", "content": message["output"]})
+            cl.user_session.get("chat_history").append(
+                {"role": "user", "content": message["output"]}
+            )
         elif message["type"] == "assistant_message":
-            cl.user_session.get("chat_history").append({"role": "assistant", "content": message["output"]})
+            cl.user_session.get("chat_history").append(
+                {"role": "assistant", "content": message["output"]}
+            )
 
 
 @cl.on_message
@@ -43,11 +48,8 @@ async def on_message(message: cl.Message):
 
     chat_history.append({"role": "user", "content": message.content})
 
-    chat_response = client.chat.complete(
-        model=model,
-        messages=chat_history
-    )
-    
+    chat_response = client.chat.complete(model=model, messages=chat_history)
+
     response_content = chat_response.choices[0].message.content
 
     chat_history.append({"role": "assistant", "content": response_content})

@@ -22,12 +22,15 @@ import mimetypes
 
 # Add all supported mimetypes so the app functions on app services
 mimetypes.add_type(
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx")
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"
+)
 mimetypes.add_type(
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx")
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"
+)
 mimetypes.add_type("application/pdf", ".pdf")
 mimetypes.add_type(
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx")
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"
+)
 mimetypes.add_type("text/plain", ".txt")
 mimetypes.add_type("image/jpeg", ".jpeg")
 mimetypes.add_type("image/png", ".png")
@@ -45,8 +48,8 @@ text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
 
 azure_services = AzureServices()
 
-DOCUMENT_INTELLIGENCE_ENDPOINT = os.getenv('DOCUMENT_INTELLIGENCE_ENDPOINT')
-DOCUMENT_INTELLIGENCE_API_KEY = os.getenv('DOCUMENT_INTELLIGENCE_API_KEY')
+DOCUMENT_INTELLIGENCE_ENDPOINT = os.getenv("DOCUMENT_INTELLIGENCE_ENDPOINT")
+DOCUMENT_INTELLIGENCE_API_KEY = os.getenv("DOCUMENT_INTELLIGENCE_API_KEY")
 
 
 # Callback handler for handling streaming responses from the language model
@@ -89,8 +92,10 @@ async def setup_runnable(memory: ConversationSummaryBufferMemory):
     # Create the prompt for the agent
 
     # Add knowledge of current date to the prompt
-    system_prompt = "You are a helpful assistant. The current date is " + \
-        datetime.now().date().strftime('%A, %Y-%m-%d')
+    system_prompt = (
+        "You are a helpful assistant. The current date is "
+        + datetime.now().date().strftime("%A, %Y-%m-%d")
+    )
 
     # Create the chat prompt template, the ordering of the placeholders is important, taken from: https://smith.langchain.com/hub/hwchase17/openai-tools-agent
     prompt = ChatPromptTemplate.from_messages(
@@ -98,7 +103,7 @@ async def setup_runnable(memory: ConversationSummaryBufferMemory):
             ("system", system_prompt),
             MessagesPlaceholder(variable_name="chat_history"),
             ("user", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad")
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
     )
 
@@ -108,12 +113,12 @@ async def setup_runnable(memory: ConversationSummaryBufferMemory):
         agent_tools = [uploaded_files_search]
 
     # Create the OpenAI Tools agent using the specified model, tools, and prompt
-    agent = create_tool_calling_agent(
-        azure_services.model, agent_tools, prompt)
+    agent = create_tool_calling_agent(azure_services.model, agent_tools, prompt)
 
     # Create an agent executor by passing in the agent and tools
     agent_executor = AgentExecutor(
-        agent=agent, tools=agent_tools, memory=memory, max_iterations=5)
+        agent=agent, tools=agent_tools, memory=memory, max_iterations=5
+    )
 
     # Set the agent executor in the user session
     cl.user_session.set("agent_executor", agent_executor)
@@ -130,7 +135,11 @@ async def start_chat():
     cl.user_session.set("uploaded_files", False)
 
     conversation_summary_memory = ConversationSummaryBufferMemory(
-        llm=azure_services.model, max_token_limit=4000, memory_key="chat_history", return_messages=True)
+        llm=azure_services.model,
+        max_token_limit=4000,
+        memory_key="chat_history",
+        return_messages=True,
+    )
     await setup_runnable(conversation_summary_memory)
 
 
@@ -158,8 +167,10 @@ async def chat(message: cl.Message):
 
     # Invoke the agent with the user message as input
     try:
-        await agent_executor.ainvoke({"input": message.content}, {"callbacks": [
-            cl.AsyncLangchainCallbackHandler(), StreamHandler()]})
+        await agent_executor.ainvoke(
+            {"input": message.content},
+            {"callbacks": [cl.AsyncLangchainCallbackHandler(), StreamHandler()]},
+        )
     except Exception as e:
         await cl.Message(
             author="System",
@@ -180,7 +191,11 @@ async def file_loader(message: cl.Message):
     documents = []
     for element in message.elements:
         loader = AzureAIDocumentIntelligenceLoader(
-            api_endpoint=DOCUMENT_INTELLIGENCE_ENDPOINT, api_key=DOCUMENT_INTELLIGENCE_API_KEY, file_path=element.path, api_model="prebuilt-layout", mode="markdown"
+            api_endpoint=DOCUMENT_INTELLIGENCE_ENDPOINT,
+            api_key=DOCUMENT_INTELLIGENCE_API_KEY,
+            file_path=element.path,
+            api_model="prebuilt-layout",
+            mode="markdown",
         )
 
         docs = await cl.make_async(loader.load)()
@@ -197,8 +212,7 @@ async def file_loader(message: cl.Message):
         single_doc = documents[0]
 
         # Insert the document's content into the chat history as a "context" field
-        conversation_summary_memory = cl.user_session.get(
-            "agent_executor").memory
+        conversation_summary_memory = cl.user_session.get("agent_executor").memory
 
         conversation_summary_memory.chat_memory.add_ai_message(
             f"context: page_content={single_doc.page_content}, "
@@ -218,7 +232,7 @@ async def file_loader(message: cl.Message):
     ).send()
 
 
-@ cl.on_chat_resume
+@cl.on_chat_resume
 async def on_chat_resume(thread: ThreadDict):
     """
     This function is triggered when the chat application is resumed after being paused.
@@ -229,7 +243,11 @@ async def on_chat_resume(thread: ThreadDict):
 
     # Create a new ConversationSummaryBufferMemory with the specified parameters
     conversation_summary_memory = ConversationSummaryBufferMemory(
-        llm=azure_services.model, max_token_limit=4000, memory_key="chat_history", return_messages=True)
+        llm=azure_services.model,
+        max_token_limit=4000,
+        memory_key="chat_history",
+        return_messages=True,
+    )
 
     # Retrieve the root messages from the thread
     root_messages = [m for m in thread["steps"] if m["parentId"] is None]
@@ -238,18 +256,16 @@ async def on_chat_resume(thread: ThreadDict):
         # Check the type of the message
         if message["type"] == "USER_MESSAGE":
             # Add user message to the chat memory
-            conversation_summary_memory.chat_memory.add_user_message(
-                message["output"])
+            conversation_summary_memory.chat_memory.add_user_message(message["output"])
         else:
             # Add AI message to the chat memory
-            conversation_summary_memory.chat_memory.add_ai_message(
-                message["output"])
+            conversation_summary_memory.chat_memory.add_ai_message(message["output"])
 
     # Call the setup_runnable function to continue the chat application
     await setup_runnable(conversation_summary_memory)
 
 
-@ cl.oauth_callback
+@cl.oauth_callback
 def oauth_callback(
     provider_id: str,
     token: str,
@@ -265,7 +281,7 @@ def oauth_callback(
     return default_user
 
 
-@ cl.on_chat_end
+@cl.on_chat_end
 async def on_chat_end():
     """
     This function is called when a chat ends.
