@@ -108,7 +108,7 @@ async def on_message(message: cl.Message):
         stream_resp = None
         send_message = __truncate_conversation(message_history)
         try:
-            stream = openai_client.chat.completions.create(
+            stream = await openai_client.chat.completions.create(
                 model="gpt-4",
                 messages=send_message,
                 stream=True,
