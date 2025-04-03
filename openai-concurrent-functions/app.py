@@ -62,19 +62,19 @@ async def run_conversation(message: cl.Message):
     message_history.append({"role": "user", "content": message.content})
     # Step 1: send the conversation and available functions to the model
 
-    msg = cl.Message(author="Assistant", content="")
-    await msg.send()
+    
 
     response = await client.chat.completions.create(
-        model="gpt-3.5-turbo-1106",
+        model="gpt-4o-mini",
         messages=message_history,
         tools=tools,
         tool_choice="auto",  # auto is default, but we'll be explicit
     )
     response_message = response.choices[0].message
 
-    msg.content = response_message.content or ""
-    await msg.update()
+    if response_message.content:
+        msg = cl.Message(author="Assistant", content=response_message.content)
+        await msg.send()
 
     tool_calls = response_message.tool_calls
     # Step 2: check if the model wanted to call a function
@@ -112,7 +112,7 @@ async def run_conversation(message: cl.Message):
         # Extend conversation with all function responses
         message_history.extend(function_responses)
         second_response = await client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+            model="gpt-4o-mini",
             messages=message_history,
         )  # get a new response from the model where it can see the function response
         second_message = second_response.choices[0].message

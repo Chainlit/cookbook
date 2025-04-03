@@ -55,15 +55,22 @@ def flatten(xss):
 @cl.on_mcp_connect
 async def on_mcp(connection, session: ClientSession):
     result = await session.list_tools()
-    tools = [
-        {
-            "name": t.name,
-            "description": t.description,
-            "input_schema": t.inputSchema,
-        }
-        for t in result.tools
-    ]
-
+    tools = [{
+        "name": t.name,
+        "description": t.description,
+        "input_schema": t.inputSchema,
+        } for t in result.tools]
+    
+    # Save tools to a JSON file
+    import os
+    
+    # Create directory if it doesn't exist
+    os.makedirs("tools_data", exist_ok=True)
+    
+    # Save to JSON file
+    with open(f"tools_data/{connection.name}_tools.json", "w") as f:
+        json.dump(tools, f, indent=2)
+    
     mcp_tools = cl.user_session.get("mcp_tools", {})
     mcp_tools[connection.name] = tools
     cl.user_session.set("mcp_tools", mcp_tools)

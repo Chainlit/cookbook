@@ -36,9 +36,9 @@ async def start():
     Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
     Settings.context_window = 4096
 
-    service_context = ServiceContext.from_defaults(
-        callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()])
-    )
+    Settings.callback_manager = CallbackManager([cl.LlamaIndexCallbackHandler()])
+    service_context = Settings.callback_manager
+    
     query_engine = index.as_query_engine(
         streaming=True, similarity_top_k=2, service_context=service_context
     )

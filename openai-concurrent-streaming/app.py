@@ -7,7 +7,7 @@ from openai import AsyncClient
 openai_client = AsyncClient(api_key=os.environ.get("OPENAI_API_KEY"))
 
 
-model_name = "gpt-3.5-turbo"
+model_name = "gpt-4o-mini"
 settings = {
     "temperature": 0.3,
     "max_tokens": 500,

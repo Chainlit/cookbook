@@ -1,0 +1,3 @@
+chainlit
+langchain
+stability_sdk==0.8.0
