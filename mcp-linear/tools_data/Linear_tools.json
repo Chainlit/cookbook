@@ -1,0 +1,168 @@
+[
+  {
+    "name": "create_issue",
+    "description": "Create a new issue in Linear",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Issue title"
+        },
+        "description": {
+          "type": "string",
+          "description": "Issue description (markdown supported)"
+        },
+        "teamId": {
+          "type": "string",
+          "description": "Team ID"
+        },
+        "assigneeId": {
+          "type": "string",
+          "description": "Assignee user ID (optional)"
+        },
+        "priority": {
+          "type": "number",
+          "description": "Priority (0-4, optional)",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Label IDs to apply (optional)"
+        }
+      },
+      "required": [
+        "title",
+        "teamId"
+      ]
+    }
+  },
+  {
+    "name": "list_issues",
+    "description": "List issues with optional filters",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "teamId": {
+          "type": "string",
+          "description": "Filter by team ID (optional)"
+        },
+        "assigneeId": {
+          "type": "string",
+          "description": "Filter by assignee ID (optional)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Filter by status (optional)"
+        },
+        "first": {
+          "type": "number",
+          "description": "Number of issues to return (default: 50)"
+        }
+      }
+    }
+  },
+  {
+    "name": "update_issue",
+    "description": "Update an existing issue",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "issueId": {
+          "type": "string",
+          "description": "Issue ID"
+        },
+        "title": {
+          "type": "string",
+          "description": "New title (optional)"
+        },
+        "description": {
+          "type": "string",
+          "description": "New description (optional)"
+        },
+        "status": {
+          "type": "string",
+          "description": "New status (optional)"
+        },
+        "assigneeId": {
+          "type": "string",
+          "description": "New assignee ID (optional)"
+        },
+        "priority": {
+          "type": "number",
+          "description": "New priority (0-4, optional)",
+          "minimum": 0,
+          "maximum": 4
+        }
+      },
+      "required": [
+        "issueId"
+      ]
+    }
+  },
+  {
+    "name": "list_teams",
+    "description": "List all teams in the workspace",
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "list_projects",
+    "description": "List all projects",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "teamId": {
+          "type": "string",
+          "description": "Filter by team ID (optional)"
+        },
+        "first": {
+          "type": "number",
+          "description": "Number of projects to return (default: 50)"
+        }
+      }
+    }
+  },
+  {
+    "name": "search_issues",
+    "description": "Search for issues using a text query",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Search query text"
+        },
+        "first": {
+          "type": "number",
+          "description": "Number of results to return (default: 50)"
+        }
+      },
+      "required": [
+        "query"
+      ]
+    }
+  },
+  {
+    "name": "get_issue",
+    "description": "Get detailed information about a specific issue",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "issueId": {
+          "type": "string",
+          "description": "Issue ID"
+        }
+      },
+      "required": [
+        "issueId"
+      ]
+    }
+  }
+]
