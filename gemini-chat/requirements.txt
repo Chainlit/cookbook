@@ -1,0 +1,3 @@
+chainlit
+google-generativeai
+python-dotenv
