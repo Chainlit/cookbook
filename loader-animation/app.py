@@ -10,7 +10,7 @@ async def send_animated_message(
     base_msg: str,
     frames: List[str],
     interval: float = 0.8
-) -> None:
+    ) -> None:
     """Display animated message with minimal resource usage"""
     msg = cl.Message(content=base_msg)
     await msg.send()
@@ -24,8 +24,9 @@ async def send_animated_message(
             current_frame = frames[progress % len(frames)]
             progress_bar = ("▣" * (progress % bar_length)).ljust(bar_length, "▢")
             
-            # Single update operation
-            msg.content = f"{current_frame} {base_msg}\n{progress_bar}"
+            # Single update operation - overwrite entire content
+            new_content = f"{current_frame} {base_msg}\n{progress_bar}"
+            msg.content = new_content
             await msg.update()
             
             progress += 1
@@ -33,30 +34,6 @@ async def send_animated_message(
     except asyncio.CancelledError:
         msg.content = base_msg
         await msg.update()  # Final static message
-    base_msg: str,
-    frames: List[str],
-    interval: float = 0.8
-) -> None:
-    """Display animated message with minimal resource usage"""
-    msg = cl.Message(content=base_msg)
-    await msg.send()
-    
-    progress = 0
-    bar_length = 12  # Optimal length for progress bar
-    
-    try:
-        while True:
-            # Efficient progress calculation
-            current_frame = frames[progress % len(frames)]
-            progress_bar = ("▣" * (progress % bar_length)).ljust(bar_length, "▢")
-            
-            # Single update operation
-            await msg.update(content=f"{current_frame} {base_msg}\n{progress_bar}")
-            
-            progress += 1
-            await asyncio.sleep(interval)
-    except asyncio.CancelledError:
-        await msg.update(content=base_msg)  # Final static message
 
 @cl.on_message
 async def main(message: cl.Message) -> None:

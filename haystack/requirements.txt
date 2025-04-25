@@ -1,3 +1,0 @@
-farm-haystack[inference]
-datasets
-chainlit
