@@ -23,10 +23,11 @@ The application initializes a chatbot using the `ChatOpenAI` model, which is cap
 
 To start using this application, follow these steps:
 
-1. Ensure you have `chainlit` and `langchain` libraries installed.
+1. Ensure you have `chainlit`, `openai`, `langchain` and `langchain-community` libraries installed.
 2. Place the provided code in a file named `app.py` within the `chainlit-cookbook/resume-chat` directory.
-3. Run the application. It will listen for chat start, resume, and message events.
-4. Interact with the chatbot through the supported interface, and it will maintain the conversation context across sessions.
+3. Copy environment variables with `cp .env.example .env` and generate a secret with `chainlit create-secret` that you should add to your `.env`. Also add an OpenAI API key and optionally a Literal AI API key to enable logging).
+4. Run the application. It will listen for chat start, resume, and message events.
+5. Interact with the chatbot through the supported interface (login with admin/admin), and it will maintain the conversation context across sessions.
 
 ## Code Definitions
 
