@@ -152,7 +152,6 @@ def oauth_callback(
 
 The `@cl.oauth_callback` should now work as normal with your new provider.
 
-As of 03/13/2024, the injected provider is also fully supported in Literal.
 
 ### Step 6: Set up custom JS and CSS to handle the login page (recommended)
 

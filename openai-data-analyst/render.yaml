@@ -10,8 +10,6 @@ services:
         sync: false
       - key: OPENAI_ASSISTANT_ID
         sync: false
-      - key: LITERAL_API_KEY
-        sync: false
     region: frankfurt
     buildCommand: pip install -r requirements.txt
     startCommand: chainlit run app.py -h --port $PORT
