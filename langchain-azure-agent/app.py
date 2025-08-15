@@ -1,17 +1,19 @@
-from datetime import datetime
-import os
+from datetime import datetime, timezone
 from typing import Dict, Optional
+from uuid import uuid4
 
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain.memory import ConversationSummaryBufferMemory
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import RunnableConfig
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain_community.document_loaders import AzureAIDocumentIntelligenceLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages.utils import trim_messages, count_tokens_approximately
+from langchain_sandbox import PyodideSandboxTool
 
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import InMemorySaver, CheckpointMetadata, Checkpoint, ChannelVersions
+
+from services.document_loader import AsyncLoader
 from tools.rag_search import rag_search
-from tools.web_search import web_search
-from tools.uploaded_files_search import uploaded_files_search
+from tools.file_search import file_search
 
 from services.azure_services import AzureServices
 
@@ -19,18 +21,14 @@ from chainlit.types import ThreadDict
 import chainlit as cl
 import mimetypes
 
-
 # Add all supported mimetypes so the app functions on app services
 mimetypes.add_type(
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"
-)
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx")
 mimetypes.add_type(
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"
-)
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx")
 mimetypes.add_type("application/pdf", ".pdf")
 mimetypes.add_type(
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"
-)
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx")
 mimetypes.add_type("text/plain", ".txt")
 mimetypes.add_type("image/jpeg", ".jpeg")
 mimetypes.add_type("image/png", ".png")
@@ -39,17 +37,28 @@ mimetypes.add_type("image/tiff", ".tiff")
 mimetypes.add_type("image/heif", ".heif")
 mimetypes.add_type("text/html", ".html")
 
+checkpointer = InMemorySaver()
 
-text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-    model_name="gpt-4o",
-    chunk_size=5000,
-    chunk_overlap=500,
+python_code_sandbox = PyodideSandboxTool(
+    # Allow Pyodide to install python packages that
+    # might be required.
+    allow_net=True
 )
 
-azure_services = AzureServices()
 
-DOCUMENT_INTELLIGENCE_ENDPOINT = os.getenv("DOCUMENT_INTELLIGENCE_ENDPOINT")
-DOCUMENT_INTELLIGENCE_API_KEY = os.getenv("DOCUMENT_INTELLIGENCE_API_KEY")
+# This function will be called every time before the node that calls LLM
+def pre_model_hook(state):
+    trimmed_messages = trim_messages(
+        state["messages"],
+        strategy="last",
+        token_counter=count_tokens_approximately,
+        max_tokens=10000,
+        start_on="human",
+        end_on=("human", "tool"),
+    )
+    # You can return updated messages either under `llm_input_messages` or
+    # `messages` key (see the note below)
+    return {"llm_input_messages": trimmed_messages}
 
 
 # Callback handler for handling streaming responses from the language model
@@ -66,25 +75,21 @@ class StreamHandler(BaseCallbackHandler):
     """
 
     def __init__(self):
-        self.msg = None
+        self.msg = cl.Message(content="")
 
     async def on_llm_new_token(self, token: str, **kwargs):
-        if not token:
-            return
-
-        if self.msg is None:
-            self.msg = cl.Message(content="", author="Assistant")
-
         await self.msg.stream_token(token)
 
     async def on_llm_end(self, response: str, **kwargs):
-        if self.msg:
-            await self.msg.send()
-        self.msg = None
+        await self.msg.send()
+        self.msg = cl.Message(content="")
+
+
+azure_services = AzureServices()
 
 
 # Function to setup the runnable environment for the chat application
-async def setup_runnable(memory: ConversationSummaryBufferMemory):
+async def setup_runnable():
     """
     Sets up the runnable environment for the chat application.
     """
@@ -92,36 +97,23 @@ async def setup_runnable(memory: ConversationSummaryBufferMemory):
     # Create the prompt for the agent
 
     # Add knowledge of current date to the prompt
-    system_prompt = (
-        "You are a helpful assistant. The current date is "
-        + datetime.now().date().strftime("%A, %Y-%m-%d")
-    )
+    system_prompt = "You are a helpful assistant. The current date is " + \
+        datetime.now().date().strftime('%A, %Y-%m-%d')
 
-    # Create the chat prompt template, the ordering of the placeholders is important, taken from: https://smith.langchain.com/hub/hwchase17/openai-tools-agent
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("user", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
-    )
-
-    agent_tools = [rag_search, web_search]
+    tools = [rag_search, python_code_sandbox]
 
     if cl.user_session.get("uploaded_files") is True:
-        agent_tools = [uploaded_files_search]
+        tools = [file_search]
 
-    # Create the OpenAI Tools agent using the specified model, tools, and prompt
-    agent = create_tool_calling_agent(azure_services.model, agent_tools, prompt)
-
-    # Create an agent executor by passing in the agent and tools
-    agent_executor = AgentExecutor(
-        agent=agent, tools=agent_tools, memory=memory, max_iterations=5
+    agent = create_react_agent(
+        model=azure_services.model,
+        tools=tools,
+        pre_model_hook=pre_model_hook,
+        prompt=system_prompt,
+        checkpointer=checkpointer,
     )
 
-    # Set the agent executor in the user session
-    cl.user_session.set("agent_executor", agent_executor)
+    cl.user_session.set("agent", agent)
 
 
 # Handler for the main chat start event
@@ -134,13 +126,7 @@ async def start_chat():
     cl.user_session.set("current_thread", None)
     cl.user_session.set("uploaded_files", False)
 
-    conversation_summary_memory = ConversationSummaryBufferMemory(
-        llm=azure_services.model,
-        max_token_limit=4000,
-        memory_key="chat_history",
-        return_messages=True,
-    )
-    await setup_runnable(conversation_summary_memory)
+    await setup_runnable()
 
 
 # Handler for the main message event
@@ -152,30 +138,25 @@ async def chat(message: cl.Message):
     It handles both regular messages and file uploads.
     """
     cl.user_session.set("current_thread", message.thread_id)
+
     # If the message contains file elements, start the file loading process
     if message.elements:
         try:
             await file_loader(message)
-        except Exception as e:
+        except Exception:
             await cl.Message(
                 author="System",
                 content="An error occurred while reading the file. Please try again.",
             ).send()
 
-    # Get the agent executor from the user session
-    agent_executor: AgentExecutor = cl.user_session.get("agent_executor")
-
-    # Invoke the agent with the user message as input
-    try:
-        await agent_executor.ainvoke(
-            {"input": message.content},
-            {"callbacks": [cl.AsyncLangchainCallbackHandler(), StreamHandler()]},
-        )
-    except Exception as e:
-        await cl.Message(
-            author="System",
-            content="An error occurred while processing the message. Please try again.",
-        ).send()
+    agent = cl.user_session.get("agent")
+    await agent.ainvoke(
+        {"messages": [{"role": "user", "content": message.content}]},
+        config=RunnableConfig(
+            configurable={"thread_id": cl.user_session.get("current_thread")},
+            callbacks=[cl.LangchainCallbackHandler(), StreamHandler()]
+        ),
+    )
 
 
 # Function to handle file loading
@@ -190,42 +171,37 @@ async def file_loader(message: cl.Message):
 
     documents = []
     for element in message.elements:
-        loader = AzureAIDocumentIntelligenceLoader(
-            api_endpoint=DOCUMENT_INTELLIGENCE_ENDPOINT,
-            api_key=DOCUMENT_INTELLIGENCE_API_KEY,
-            file_path=element.path,
-            api_model="prebuilt-layout",
-            mode="markdown",
-        )
+        loader = AsyncLoader()
 
-        docs = await cl.make_async(loader.load)()
-
-        split_docs = await text_splitter.atransform_documents(docs)
-
-        for doc in split_docs:
-            doc.metadata["thread_id"] = message.thread_id
-            doc.metadata["title"] = element.name
-            documents.append(doc)
+        documents.extend(await loader.aload(
+            file_name=element.name,
+            file_mime=element.mime,
+            file_path=element.path
+        ))
 
     # If there is only a single document or chunk, directly insert that chunk into the chat history. The tool to search in uploaded files has a description that tells it to not use this tool if the information it needs is already present in the context. ChatGPT also uses this strategy.
     if len(documents) == 1:
-        single_doc = documents[0]
 
-        # Insert the document's content into the chat history as a "context" field
-        conversation_summary_memory = cl.user_session.get("agent_executor").memory
+        messages = [HumanMessage(
+            content=f"File uploaded: title={documents[0].metadata.get('title', None)}, page_content={documents[0].page_content}")]
 
-        conversation_summary_memory.chat_memory.add_ai_message(
-            f"context: page_content={single_doc.page_content}, "
-            f"title={single_doc.metadata.get('title', None)}"
-        )
+        await write_checkpoint(cl.user_session.get("current_thread"), messages)
 
-        await setup_runnable(conversation_summary_memory)
+    # Otherwise, add only the title, and vectorize the documents
     else:
-        await azure_services.uploaded_files_vector_store.aadd_documents(documents)
+        messages = [HumanMessage(
+            content=(
+                f"File uploaded: title={documents[0].metadata.get('title', None)}"
+            )
+        )]
+
+        await azure_services.uploaded_files_vector_store.aadd_documents(documents=documents)
+        await write_checkpoint(cl.user_session.get("current_thread"), messages)
 
     cl.user_session.set("uploaded_files", True)
 
-    await setup_runnable(cl.user_session.get("agent_executor").memory)
+    await setup_runnable()
+
     await cl.Message(
         author="System",
         content="Done reading and memorizing files.",
@@ -239,30 +215,14 @@ async def on_chat_resume(thread: ThreadDict):
     It initializes the ConversationSummaryBufferMemory with the history from the previous session.
     """
 
-    cl.user_session.set("current_thread", thread["id"])
+    messages = [
+        (HumanMessage if s["type"] == "USER_MESSAGE" else AIMessage)(
+            content=s["output"])
+        for s in thread["steps"]
+    ]
 
-    # Create a new ConversationSummaryBufferMemory with the specified parameters
-    conversation_summary_memory = ConversationSummaryBufferMemory(
-        llm=azure_services.model,
-        max_token_limit=4000,
-        memory_key="chat_history",
-        return_messages=True,
-    )
-
-    # Retrieve the root messages from the thread
-    root_messages = [m for m in thread["steps"] if m["parentId"] is None]
-    # Iterate over the root messages
-    for message in root_messages:
-        # Check the type of the message
-        if message["type"] == "USER_MESSAGE":
-            # Add user message to the chat memory
-            conversation_summary_memory.chat_memory.add_user_message(message["output"])
-        else:
-            # Add AI message to the chat memory
-            conversation_summary_memory.chat_memory.add_ai_message(message["output"])
-
-    # Call the setup_runnable function to continue the chat application
-    await setup_runnable(conversation_summary_memory)
+    await write_checkpoint(thread["id"], messages)
+    await setup_runnable()
 
 
 @cl.oauth_callback
@@ -288,3 +248,50 @@ async def on_chat_end():
     It sets the current_thread value in the user session to None.
     """
     cl.user_session.set("current_thread", None)
+
+
+async def write_checkpoint(
+    thread_id: str,
+    messages: list[AIMessage | HumanMessage],
+    checkpoint_ns: str = "",
+) -> str:
+    """
+    Persist `messages` to a checkpoint.
+
+    Returns the generated checkpoint-id.
+    """
+    checkpoint_id = str(uuid4())
+
+    checkpoint = Checkpoint(
+        {
+            "v": 4,
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "id": checkpoint_id,
+            "channel_versions": {"messages": "0"},
+            "versions_seen": {},
+            "channel_values": {"messages": list(messages)},
+        }
+    )
+
+    metadata = CheckpointMetadata(
+        source="import",
+        step=len(messages) - 1,
+        parents={},
+    )
+
+    cfg = RunnableConfig(
+        configurable={
+            "thread_id": thread_id,
+            "checkpoint_ns": checkpoint_ns,
+            "checkpoint_id": checkpoint_id,
+        }
+    )
+
+    await checkpointer.aput(
+        cfg,
+        checkpoint,
+        metadata,
+        new_versions=ChannelVersions({"messages": "0"}),
+    )
+
+    return checkpoint_id

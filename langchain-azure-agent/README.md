@@ -1,14 +1,11 @@
-# Chat Application with ToolCallingAgent
+# Chainlit application with ReAct agent
 
-This repository contains a Chat Application powered by AI models and tools for interacting with users, processing files, and retrieving relevant information.
+This repository contains a chainlit application powered by a LangGraph ReAct agent. The two main challenges for creating an LLM chat app are the python sandbox code execution and performant document loading. There may be better solutions for these in the future.
 
 ## Features
 
-- **AI Agent Integration**: Supports AI tools for RAG (Retrieve-then-Answer Generation) search, web search, and file search.
-- **Azure AI Integration**: Utilizes Azure AI Document Intelligence for file processing.
-- **Memory Management**: Includes conversation summary buffer memory for maintaining context.
-- **File Upload Support**: Processes various file types like `.pdf`, `.xlsx`, `.docx`, `.pptx`, `.txt`, images, and more.
-- **Custom Handlers**: Implements handlers for streaming AI responses and OAuth integration.
+- **AI Agent Integration**: Supports AI tools for Retrieval-augmented generation (RAG), web search, and file upload.
+- **Azure AI Integration**: Utilizes Azure AI Document Intelligence as well as local parsers for file processing.
 - **Dynamic Context Handling**: Dynamically adjusts context based on user input and uploaded files.
 
 ## Supported File Types
@@ -27,25 +24,27 @@ The application supports the following file types for upload and processing:
 - `.heif`
 - `.html`
 
-## Setup Instructions
+These types are handled differently for performance reasons. While Document Intelligence can also handle text types (parsing the layout as well!), it does so with a large hit to performance. Similarly, Unstructured is an alternative parser for PDF and other file types, but it is approximately twice as slow for large PDFs and results in a very large Docker image (15 GB+), which can be challenging to host. The main challenge for document parsing is not open source code, but compute (GPU resources to parse documents).
 
-Add the following configuration to `.chainlit/config.toml`:
-```toml
-cot = "tool_call"
-```
+The approach taken here is similar to Open WebUI and AnythingLLM, using different parsers for different file formats.
+
+# Python code sandbox
+
+The langchain_sandbox library is used here, since it doesn't require hosting of any additional resources.
 
 ## Folder Structure
 
-- `tools`: Contains tools for RAG search, web search, and uploaded file search.
+- `tools`: Contains tools for RAG search and uploaded file search.
 - `services`: Includes Azure integration services.
-- `handlers`: Implements custom callback handlers for streaming and OAuth.
 - `app.py`: Main application file.
 
 ## Usage
 
-1. Start the chat application.
-2. Upload files or send messages.
-3. Interact with the AI-powered agent for information retrieval, summarization, and dynamic responses.
+1. Create a virtual environment using: python -m venv .venv
+2. Use the virtual environment using: .venv\Scripts\activate
+3. Install the dependencies using pip install -r requirements.txt
+4. Install deno: https://docs.deno.com/runtime/getting_started/installation/
+5. Run the app from the virtual environment, using: chainlit run app.py
 
 ## Extending the Application
 
