@@ -1,25 +1,27 @@
 """
 Chainlit + OpenAI Integration with Local Python Execution
-
-Simplified version with local Python executor instead of OpenAI's code interpreter
+Cleaned up version with efficient file upload handling
 """
 
 import os
 import json
 import base64
 from typing import List, Dict, Any, Optional
+import pathlib
+import shutil
 
 from openai import AsyncOpenAI
 import chainlit as cl
 from chainlit.input_widget import Select, Switch
-import os, pathlib, shutil
 
 # Import our custom tools
 from tools import (
     build_tools, 
     call_function_tool, 
     show_tool_progress, 
-    show_reasoning_summary
+    show_reasoning_summary,
+    upload_file_to_workspace,
+    list_workspace_files
 )
 
 # ─────────────────── OpenAI Client Setup ────────────────────────────────────
@@ -27,7 +29,8 @@ cl.instrument_openai()
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 MAX_ITER = 20
-DEV_PROMPT = "Talk in Ned Flanders style. You are a helpful assistant with access to local Python execution, web search, image generation, file search, and file upload capabilities. You can upload files to a persistent Python workspace and analyze them with code. IMPORTANT: When you see function calls for 'upload_file_to_workspace' or 'list_workspace_files' in the conversation history, acknowledge what files were uploaded or are available. Always check your recent function call results to understand what the user has done. Use tools when needed."
+DEV_PROMPT = "Talk in Ned Flanders style. You are a helpful assistant with access to local Python execution, web search, image generation, file search, and file upload capabilities. You can upload files to a persistent Python workspace and analyze them with code. Use tools when needed."
+
 # ─────────────────── Session Management ─────────────────────────────────────
 @cl.on_chat_start
 async def _start():
@@ -50,6 +53,7 @@ async def _start():
     cl.user_session.set("tool_results", {})
     cl.user_session.set("vector_store_id", None)
     cl.user_session.set("dev_prompt", DEV_PROMPT)
+
     # Ask about file upload for search capabilities
     upload_choice = await cl.AskActionMessage(
         content="Would you like to upload files for search capabilities?",
@@ -114,8 +118,10 @@ async def setup_agent(settings):
     """Handle settings updates"""
     cl.user_session.set("settings", settings)
 
+
 @cl.on_chat_end
 def _cleanup():
+    """Clean up workspace when chat ends"""
     ws_dir = cl.user_session.get("python_workspace_dir")
     if ws_dir and os.path.isdir(ws_dir):
         try:
@@ -123,13 +129,83 @@ def _cleanup():
         except Exception:
             pass
 
+
+# ─────────────────── File Upload Helper ─────────────────────────────────────
+async def handle_file_uploads(uploaded_files: List[Dict[str, Any]]) -> str:
+    """
+    Handle file uploads and return context message for LLM
+    
+    Args:
+        uploaded_files: List of file info dicts
+        
+    Returns:
+        Context message about uploads and current workspace state
+    """
+    if not uploaded_files:
+        return ""
+    
+    workspace_dir = cl.user_session.get("python_workspace_dir")
+    context_parts = []
+    
+    # Process uploads
+    for file_info in uploaded_files:
+        try:
+            # Decode and upload file
+            content_bytes = base64.b64decode(file_info['content_b64'])
+            upload_result_json = upload_file_to_workspace(
+                file_info['filename'], 
+                content_bytes, 
+                workspace_dir
+            )
+            upload_result = json.loads(upload_result_json)
+            
+            if upload_result['success']:
+                # Show success message to user
+                await cl.Message(
+                    content=f"**File uploaded successfully!**\n\n"
+                           f"**{file_info['filename']}** has been saved to the Python workspace.\n"
+                           f"Size: {file_info['size']:,} bytes\n"
+                           f"You can now analyze this file using Python code.",
+                    author="File Manager"
+                ).send()
+            else:
+                await cl.Message(
+                    content=f"**Upload failed:** {upload_result.get('message', 'Unknown error')}",
+                    author="File Manager"
+                ).send()
+                
+        except Exception as e:
+            await cl.Message(
+                content=f"**Upload failed:** Error processing {file_info['filename']}: {str(e)}",
+                author="File Manager"
+            ).send()
+    
+    # Get current workspace state
+    workspace_result = list_workspace_files(workspace_dir)
+    try:
+        workspace_data = json.loads(workspace_result)
+        if workspace_data['success'] and workspace_data['files']:
+            file_list = [f"{f['filename']} ({f['size']:,} bytes)" for f in workspace_data['files']]
+            
+            # Build context message
+            uploaded_names = [f['filename'] for f in uploaded_files]
+            context_parts.append(f"I just uploaded {len(uploaded_files)} file(s): {', '.join(uploaded_names)}.")
+            context_parts.append(f"Current workspace contains {len(file_list)} files: {', '.join(file_list)}.")
+        else:
+            context_parts.append(f"I just uploaded {len(uploaded_files)} file(s) but workspace appears empty.")
+    except:
+        context_parts.append(f"I just uploaded {len(uploaded_files)} file(s) to your workspace.")
+    
+    return " ".join(context_parts)
+
+
 # ─────────────────── Core GPT Interaction ───────────────────────────────────
 async def _ask_gpt(input_data, prev_id=None):
     """
     Send request to OpenAI API and handle streaming response
     
     Args:
-        input_data: Input for the API call - can be a string, list of messages, or full conversation history
+        input_data: Input for the API call
         prev_id: Previous response ID for continuation
         
     Returns:
@@ -150,18 +226,19 @@ async def _ask_gpt(input_data, prev_id=None):
 
     # Handle different input types
     if isinstance(input_data, list) and len(input_data) > 0 and isinstance(input_data[0], dict):
-        # This is a list of messages for the current turn
         api_input = input_data
     else:
-        # Single input (string or multimodal)
         api_input = input_data
+        
     dev_input = []
     if not prev_id:
         dev_input.append({
-            "role": "developer",  # or "system"
+            "role": "developer",
             "content": cl.user_session.get("dev_prompt") or DEV_PROMPT,
         })
+    
     print(dev_input + api_input)
+    
     # Make API call with streaming
     stream = await client.responses.create(
         model="gpt-5-mini",
@@ -200,7 +277,6 @@ async def _ask_gpt(input_data, prev_id=None):
             resp_id = ev.response.id
             
         elif ev.type == "response.completed":
-            # Response completed
             pass
 
         # Tool progress tracking
@@ -223,7 +299,16 @@ async def _ask_gpt(input_data, prev_id=None):
         elif ev.type == "response.image_generation_call.completed":
             if settings.get("show_tool_execution", True):
                 await show_tool_progress("image_generation_call", "completed")
-
+        elif ev.type == "response.image_generation_call.partial_image":
+            # Display the generated image using base64 data
+            if hasattr(ev, 'partial_image_b64'):
+                image_data = f"data:image/png;base64,{ev.partial_image_b64}"
+                image_msg = cl.Message(
+                    content="Here's your generated image:",
+                    author="Assistant",
+                    elements=[cl.Image(url=image_data, name="Generated Image", display="inline")]
+                )
+                await image_msg.send()
         # Reasoning summary streaming
         elif ev.type == "response.reasoning_summary_text.delta":
             reasoning_text += ev.delta
@@ -255,18 +340,12 @@ async def _ask_gpt(input_data, prev_id=None):
                     # If this is Python code, stream the code generation
                     if call["name"] == "execute_python_code" and streaming_code_message:
                         try:
-                            # Try to parse the current arguments to extract code
-                            # We might have incomplete JSON, so we need to handle this carefully
                             current_args_str = call["arguments"]
                             
-                            # Try to find the code field in the JSON string
                             if '"code":"' in current_args_str:
-                                # Extract everything after "code":"
                                 code_start = current_args_str.find('"code":"') + 8
                                 code_part = current_args_str[code_start:]
                                 
-                                # Find the end of the code string (look for unescaped quote)
-                                # This is a simple approach - we'll look for the pattern
                                 code_end = len(code_part)
                                 if '"}' in code_part:
                                     code_end = code_part.find('"}')
@@ -274,16 +353,13 @@ async def _ask_gpt(input_data, prev_id=None):
                                     code_end = code_part.find('",')
                                 
                                 new_code = code_part[:code_end]
-                                
-                                # Unescape the JSON string
                                 new_code = new_code.replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t')
                                 
                                 if new_code != current_code:
                                     current_code = new_code
                                     streaming_code_message.content = f"**Python Code Being Generated:**\n```python\n{current_code}\n```"
                                     await streaming_code_message.update()
-                        except Exception as e:
-                            # If parsing fails, just continue - we'll get more data
+                        except Exception:
                             pass
                     break
 
@@ -325,22 +401,17 @@ async def _on_msg(m: cl.Message):
             "content": cl.user_session.get("dev_prompt") or DEV_PROMPT
         })
 
-    # Handle file uploads by converting them to function calls
+    # Handle file uploads
     uploaded_files = []
     if m.elements:
         for element in m.elements:
-            # Handle file uploads
-            if hasattr(element, 'path') and hasattr(element, 'name') and not (element.mime and element.mime.startswith("image/")):
+            if (hasattr(element, 'path') and hasattr(element, 'name') and 
+                not (element.mime and element.mime.startswith("image/"))):
                 try:
-                    # Read the file content
                     with open(element.path, 'rb') as f:
                         file_content = f.read()
                     
-                    # Convert to base64 for the function call
-                    import base64
                     content_b64 = base64.b64encode(file_content).decode('utf-8')
-                    
-                    # Create a function call for file upload
                     uploaded_files.append({
                         'filename': element.name,
                         'content_b64': content_b64,
@@ -354,13 +425,12 @@ async def _on_msg(m: cl.Message):
 
     # Handle multimodal input (text + images)
     image_count = 0
+    content = [{"type": "input_text", "text": m.content}]
+    
     if m.elements:
-        content = [{"type": "input_text", "text": m.content}]
-        
         for element in m.elements:
             if element.mime and element.mime.startswith("image/"):
                 if hasattr(element, "path") and element.path:
-                    # Read image file and encode as base64
                     with open(element.path, "rb") as image_file:
                         encoded_string = base64.b64encode(image_file.read()).decode()
                         content.append({
@@ -371,80 +441,38 @@ async def _on_msg(m: cl.Message):
                 elif element.url:
                     content.append({"type": "input_image", "image_url": element.url})
                     image_count += 1
-        
-        # Only use multimodal format if we have images
-        if image_count > 0:
-            current_input = [{"role": "user", "content": content}]
-            history_content = f"{m.content} [+ {image_count} image(s)]"
-        else:
-            current_input = [{"role": "user", "content": m.content}]
-            history_content = m.content
-    else:
-        current_input = [{"role": "user", "content": m.content}]
-        history_content = m.content
 
-    # Get previous response ID for continuation
-    prev_response_id = cl.user_session.get("previous_response_id")
-
-    # Process any file uploads first and enhance the user message
-    upload_info = []
-    for file_info in uploaded_files:
-        # Execute the upload
-        upload_call = {
-            "id": f"upload_{file_info['filename']}",
-            "call_id": f"upload_{file_info['filename']}_call",
-            "name": "upload_file_to_workspace",
-            "arguments": json.dumps({
-                "filename": file_info['filename'],
-                "content": file_info['content_b64']
-            })
-        }
-        
-        await call_function_tool(upload_call, full_history)
-        
-        # After upload, automatically list files  
-        list_files_call = {
-            "id": f"list_after_upload_{file_info['filename']}",
-            "call_id": f"list_after_upload_{file_info['filename']}_call", 
-            "name": "list_workspace_files",
-            "arguments": "{}"
-        }
-        
-        await call_function_tool(list_files_call, full_history)
-        
-        # Add info about what was uploaded
-        upload_info.append(f"{file_info['filename']} ({file_info['size']:,} bytes)")
-
-    # Enhance the user message to inform the AI about uploads
-    # Add file upload info to history
+    # Process file uploads and build context
+    upload_context = ""
     if uploaded_files:
-        additional_note = f"\n\nNote: I just uploaded {len(uploaded_files)} file(s) to your Python workspace: {', '.join([f['filename'] for f in uploaded_files])}. These files are now available for analysis."
-        history_content += additional_note
+        upload_context = await handle_file_uploads(uploaded_files)
+
+    # Build final message content
+    enhanced_content = m.content
+    if upload_context:
+        enhanced_content = f"{m.content}\nNote: {upload_context}"
+
+    # Update conversation input
+    if image_count > 0:
+        content[0]["text"] = enhanced_content
+        current_input = [{"role": "user", "content": content}]
+        history_content = f"{enhanced_content} [+ {image_count} image(s)]"
+    else:
+        current_input = [{"role": "user", "content": enhanced_content}]
+        history_content = enhanced_content
 
     # Update conversation history
     full_history.append({"role": "user", "content": history_content})
     cl.user_session.set("full_conversation_history", full_history)
-    enhanced_content = m.content
-    if upload_info:
-        additional_note = f"\n\nNote: I just uploaded {len(uploaded_files)} file(s) to your Python workspace: {', '.join([f['filename'] for f in uploaded_files])}. These files are now available for analysis."
-        enhanced_content += additional_note
 
-    # Update the current input with enhanced message
-    if image_count > 0:
-        # Update the text part of multimodal content
-        for item in content:
-            if item["type"] == "input_text":
-                item["text"] = enhanced_content
-        current_input = [{"role": "user", "content": content}]
-    else:
-        current_input = [{"role": "user", "content": enhanced_content}]
+    # Get previous response ID for continuation
+    prev_response_id = cl.user_session.get("previous_response_id")
 
     # Handle multiple iterations for function calls
     for iteration in range(MAX_ITER):
         resp_id, calls = await _ask_gpt(current_input, prev_response_id)
         
         if not calls:
-            # No function calls, we're done
             break
 
         # Get settings for this iteration
@@ -524,6 +552,5 @@ async def show_full_conversation(current_message: List[Dict], full_history: List
 
 
 if __name__ == "__main__":
-    # Entry point for running the Chainlit app
     import chainlit as cl
     cl.run()
