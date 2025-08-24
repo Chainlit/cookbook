@@ -65,6 +65,10 @@ tools = [
     },
 ]
 MAX_ITER = 20
+DEV_PROMPT = (
+    "You are a helpful assistant. Use tools when needed. "
+    "Talk in Ned Flanders Simpsons style always."
+)
 
 # ─────────────────── 3. conversation helpers ────────────────────────────────
 @cl.on_chat_start
@@ -72,6 +76,7 @@ def _start():
     cl.user_session.set("full_conversation_history", [])
     cl.user_session.set("previous_response_id", None)
     cl.user_session.set("tool_results", {})
+    cl.user_session.set("dev_prompt", DEV_PROMPT)
 
 
 # Enhanced debug view with full conversation history
@@ -158,11 +163,18 @@ async def call_function_tool(call, full_history):
 
 
 async def _ask_gpt5(input_messages, prev_id=None):
+    dev_input = []
+    if not prev_id:
+        dev_input.append({
+            "role": "developer",  # or "system"
+            "content": cl.user_session.get("dev_prompt") or DEV_PROMPT,
+        })
+    print(dev_input + input_messages)
     stream = await client.responses.create(
         model="gpt-5-mini",
         reasoning={"effort": "minimal"},
-        input=input_messages,  # Only current turn messages
-        instructions="Never ask clarifying questions. Talk in Ned Flanders Simpsons style.",
+        input=dev_input + input_messages,  # Only current turn messages
+        instructions="Never ask clarifying questions. Use the tools when needed.",
         stream=True,
         store=True,
         tools=tools,
@@ -223,7 +235,7 @@ async def _on_msg(m: cl.Message):
 
     if not full_history:
         full_history.append(
-            {"role": "developer", "content": "You are a helpful assistant. Use tools when needed."}
+            {"role": "developer", "content": cl.user_session.get("dev_prompt") or DEV_PROMPT}
         )
 
     full_history.append({"role": "user", "content": m.content})
