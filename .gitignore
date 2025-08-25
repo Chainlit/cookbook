@@ -9,6 +9,7 @@ fly.toml
 __pycache__
 storage
 venv
+node_modules
 credentials.json
 token.json
 *.chainlit

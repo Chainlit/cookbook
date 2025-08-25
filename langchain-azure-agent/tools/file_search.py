@@ -1,3 +1,4 @@
+import chainlit as cl
 from langchain.tools import tool
 from services.azure_services import AzureServices
 from pydantic import BaseModel, Field
@@ -12,10 +13,12 @@ class SearchInput(BaseModel):
     )
 
 
-@tool("rag_search", args_schema=SearchInput)
-async def rag_search(query: str) -> str:
+@tool("file_search", args_schema=SearchInput)
+async def file_search(query: str) -> str:
     """
-Use this tool, the rag search tool, to access a large collection of documents that can be searched using semantic search.
+Use this tool, the uploaded files search tool, to retrieve relevant information from uploaded files.
+
+Relevant parts of uploaded documents will be included in the conversation when needed. Use this tool only if they lack the details required to fulfill the user's request.
 
 Think carefully about how the information you find relates to the user's request. Respond as soon as you find information that clearly answers the request.
 
@@ -27,16 +30,15 @@ Revenue increased by 10% in 2023. [^1]
 
 Then, list the footnote references at the bottom of the document:
 
-[^1]: [2023 Financial Report, Page 5](https://example.com/report.pdf)
+[^1]: 2023 Financial Report, Page 5
     """
     try:
-        result = await azure_services.rag_vector_store.asimilarity_search(
-            query=query, k=5, search_type="similarity")
+        result = await azure_services.uploaded_files_vector_store.asimilarity_search(
+            query=query, k=5, search_type="similarity", filters="thread_id eq '{}'".format(cl.user_session.get('current_thread')))
 
         return [
             {
                 "page_content": doc.page_content,
-                "url": doc.metadata["url"],
                 "title": doc.metadata["title"]
             }
             for doc in result
