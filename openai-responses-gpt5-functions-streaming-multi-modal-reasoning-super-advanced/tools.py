@@ -17,15 +17,12 @@ import chainlit as cl
 class LocalPythonExecutor:
     """Execute Python code locally and return results with file attachments"""
     
-    def __init__(self):
-        # Use a persistent workspace directory instead of temporary
-        ws = cl.user_session.get("python_workspace_dir")
-        if not ws:
-            # Fallback to .files/<session_id>/pyws to ensure isolation,
-            # and finally to the old persistent folder if nothing else.
-            session_id = cl.user_session.get("id") or "default"
-            ws = os.path.join(os.getcwd(), ".files", session_id, "pyws")
-        self.workspace_dir = ws
+    def __init__(self, workspace_dir=None):
+        # Use provided workspace directory or fall back to global one
+        if workspace_dir:
+            self.workspace_dir = workspace_dir
+        else:
+            self.workspace_dir = os.path.join(os.getcwd(), "python_workspace")
         os.makedirs(self.workspace_dir, exist_ok=True)
         self.output_files = []
     
@@ -181,23 +178,21 @@ def simple_calculator(operation: str, a: float, b: float) -> str:
     except ValueError:
         return json.dumps({"error": "Invalid numbers provided"})
 
-def _resolve_ws():
-    ws = cl.user_session.get("python_workspace_dir")
-    if not ws:
-        session_id = cl.user_session.get("id") or "default"
-        ws = os.path.join(os.getcwd(), ".files", session_id, "pyws")
-    os.makedirs(ws, exist_ok=True)
-    return ws
-def list_workspace_files() -> str:
+
+def list_workspace_files(workspace_dir=None) -> str:
     """
     List all files currently in the Python workspace
     
+    Args:
+        workspace_dir: Optional specific workspace directory
+        
     Returns:
         JSON string with list of files and their info
     """
+    if workspace_dir is None:
+        workspace_dir = os.path.join(os.getcwd(), "python_workspace")
+    
     try:
-        workspace_dir = _resolve_ws()
-        
         if not os.path.exists(workspace_dir):
             return json.dumps({
                 'success': True,
@@ -233,20 +228,22 @@ def list_workspace_files() -> str:
         })
 
 
-def upload_file_to_workspace(filename: str, content: bytes) -> str:
+def upload_file_to_workspace(filename: str, content: bytes, workspace_dir=None) -> str:
     """
     Upload a file to the persistent workspace
     
     Args:
         filename: Name of the file to save
         content: File content as bytes
+        workspace_dir: Optional specific workspace directory
         
     Returns:
         JSON string with upload result
     """
     try:
         # Create workspace if it doesn't exist
-        workspace_dir = _resolve_ws()
+        if workspace_dir is None:
+            workspace_dir = os.path.join(os.getcwd(), "python_workspace")
         os.makedirs(workspace_dir, exist_ok=True)
         
         # Save file to workspace
@@ -279,17 +276,18 @@ def upload_file_to_workspace(filename: str, content: bytes) -> str:
         return json.dumps(result)
 
 
-def execute_python_code(code: str) -> Tuple[str, List[Dict[str, Any]]]:
+def execute_python_code(code: str, workspace_dir=None) -> Tuple[str, List[Dict[str, Any]]]:
     """
     Execute Python code locally and return formatted results
     
     Args:
         code: Python code to execute
+        workspace_dir: Optional specific workspace directory
         
     Returns:
         Tuple of (conversation_result_json, files_for_display)
     """
-    executor = LocalPythonExecutor()
+    executor = LocalPythonExecutor(workspace_dir)
     
     try:
         result = executor.execute_code(code)
@@ -499,6 +497,9 @@ async def call_function_tool(call: Dict[str, Any], full_history: List[Dict[str, 
         s.language = "json"
         return out
 
+    # Get workspace directory from session
+    workspace_dir = cl.user_session.get("python_workspace_dir")
+
     # Execute the appropriate function
     if call["name"] == "simple_calculator":
         out = simple_calculator(args.get("operation"), args.get("a"), args.get("b"))
@@ -507,7 +508,7 @@ async def call_function_tool(call: Dict[str, Any], full_history: List[Dict[str, 
         code = args.get("code", "")
         
         # Execute the code and get both conversation result and files
-        conversation_result, processed_files = execute_python_code(code)
+        conversation_result, processed_files = execute_python_code(code, workspace_dir)
         out = conversation_result
         
         # Display execution results and files
@@ -518,7 +519,7 @@ async def call_function_tool(call: Dict[str, Any], full_history: List[Dict[str, 
             print(f"Error displaying execution results: {e}")
             
     elif call["name"] == "list_workspace_files":
-        out = list_workspace_files()
+        out = list_workspace_files(workspace_dir)
         
         # Display file list
         try:
@@ -557,7 +558,7 @@ async def call_function_tool(call: Dict[str, Any], full_history: List[Dict[str, 
         try:
             # Decode base64 content
             content_bytes = base64.b64decode(content_b64)
-            out = upload_file_to_workspace(filename, content_bytes)
+            out = upload_file_to_workspace(filename, content_bytes, workspace_dir)
             
             # Display upload confirmation
             result_data = json.loads(out)
