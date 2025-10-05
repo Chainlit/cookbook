@@ -26,7 +26,7 @@ source venv/bin/activate
 2. Install the required dependencies:
         
 ```shell 
-pip install chainlit pyautogen
+pip install chainlit ag2
 ```
 
 3. Copy the `.env.sample` file to a new `.env` file and replace the `api_key` value with your own OpenAI API key.
