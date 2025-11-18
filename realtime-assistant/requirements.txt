@@ -1,4 +1,4 @@
-chainlit
+chainlit<2.7
 openai
 yfinance
 plotly

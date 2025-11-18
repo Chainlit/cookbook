@@ -81,7 +81,7 @@ class RealtimeEventHandler:
 class RealtimeAPI(RealtimeEventHandler):
     def __init__(self, url=None, api_key=None):
         super().__init__()
-        self.default_url = "wss://api.openai.com/v1/realtime"
+        self.default_url = f"{os.getenv('OPENAI_BASE_WSS_URL')}/v1/realtime"
         self.url = url or self.default_url
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.ws = None
@@ -92,7 +92,7 @@ class RealtimeAPI(RealtimeEventHandler):
     def log(self, *args):
         logger.debug(f"[Websocket/{datetime.utcnow().isoformat()}]", *args)
 
-    async def connect(self, model='gpt-4o-realtime-preview-2024-12-17'):
+    async def connect(self, model=os.getenv("OPENAI_REALTIME_MODEL")):
         if self.is_connected():
             raise Exception("Already connected")
         self.ws = await websockets.connect(f"{self.url}?model={model}", additional_headers={
@@ -386,7 +386,7 @@ class RealtimeClient(RealtimeEventHandler):
             "voice": "shimmer",
             "input_audio_format": "pcm16",
             "output_audio_format": "pcm16",
-            "input_audio_transcription": {"model": "whisper-1"},
+            "input_audio_transcription": {"model": f"{os.getenv('OPENAI_TRANSCRIPTION_MODEL')}"},
             "turn_detection": {"type": "server_vad"},
             "tools": [],
             "tool_choice": "auto",
@@ -394,7 +394,7 @@ class RealtimeClient(RealtimeEventHandler):
             "max_response_output_tokens": 4096,
         }
         self.session_config = {}
-        self.transcription_models = [{"model": "whisper-1"}]
+        self.transcription_models = [{"model": f"{os.getenv('OPENAI_TRANSCRIPTION_MODEL')}"}]
         self.default_server_vad_config = {
             "type": "server_vad",
             "threshold": 0.5,
