@@ -1,13 +1,13 @@
-from langchain.llms.ollama import Ollama
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import StrOutputParser
-from langchain.schema.runnable import Runnable
-from langchain.schema.runnable.config import RunnableConfig
+from langchain_ollama.llms import OllamaLLM
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables.base import Runnable
+from langchain_core.runnables.config import RunnableConfig
 
 import chainlit as cl
 
-model = Ollama(
-    model="llama2",
+model = OllamaLLM(
+    model="gemma3",
 )
 
 
