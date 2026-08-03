@@ -42,6 +42,8 @@ Once the application is running, you can interact with the chatbot through the C
 
 For detailed instructions and more information, refer to the [main readme](/README.md).
 
+> **Tip:** The OpenAI client also works with OpenAI-compatible multi-model gateways. Set `base_url="https://api.daoxe.com/v1"` (and your key) to try [DaoXE](https://daoxe.com?utm_source=github&utm_medium=organic&utm_campaign=chainlit-cookbook&utm_content=openai) as one example without changing the rest of the code.
+
 OpenAI functions enable GPT to use functions you defined in your code.
 To run the example, follow the instructions of the [main readme](/README.md).
 
